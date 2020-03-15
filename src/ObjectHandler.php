@@ -15,7 +15,7 @@ class ObjectHandler implements ObjectHandlerInterface
 
     public function addHandleType(HandleTypeInterface $handleType): void
     {
-        $this->handleTypes[] = $handleType;
+        $this->handleTypes[$handleType->getId()] = $handleType;
     }
 
     /**
