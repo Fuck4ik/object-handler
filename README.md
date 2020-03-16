@@ -44,4 +44,4 @@ Roman Yastrebov - <tirastwo@gmail.com> - <https://www.instagram.com/omasn.hawk/>
 
 ### License
 
-Monolog is licensed under the MIT License - see the `LICENSE` file for details
+Object handler is licensed under the MIT License - see the `LICENSE` file for details
