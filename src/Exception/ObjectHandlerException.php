@@ -3,6 +3,7 @@
 namespace Omasn\ObjectHandler\Exception;
 
 use Omasn\ObjectHandler\HandleProperty;
+use Symfony\Component\Validator\ConstraintViolation;
 
 abstract class ObjectHandlerException extends \Exception
 {
@@ -26,5 +27,10 @@ abstract class ObjectHandlerException extends \Exception
     public function getProperty(): HandleProperty
     {
         return $this->property;
+    }
+
+    public function buildViolation(): ConstraintViolation
+    {
+        return $this->property->buildViolation($this->getMessage());
     }
 }

@@ -3,11 +3,21 @@
 namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
+use Omasn\ObjectHandler\Exception\NotBlankHandleValueException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
 use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ObjectHandler implements ObjectHandlerInterface
 {
+    private ?ValidatorInterface $validator;
+
+    public function __construct(ValidatorInterface $validator = null)
+    {
+        $this->validator = $validator;
+    }
+
     /**
      * @var HandleTypeInterface[]
      */
@@ -28,35 +38,72 @@ class ObjectHandler implements ObjectHandlerInterface
      */
     public function handle($object, array $data, array $context = []): ConstraintViolationList
     {
-        $violationList = new ConstraintViolationList();
         $reflector = new \ReflectionClass($object);
 
-        foreach ($reflector->getProperties() as $property) {
-            $handleProperty = new HandleProperty($data[$property->getName()] ?? null, $property);
-            $handleType = $this->getHandleType($handleProperty);
+        $violationList = new ConstraintViolationList();
+        foreach ($reflector->getProperties() as $refProperty) {
+            $propertyName = $refProperty->getName();
+            $handleValue = $data[$propertyName] ?? null;
 
-            if (null !== $handleType) {
-                if ($this->isNull($handleProperty)) {
-                    $handleProperty->setValue(null);
-                } else {
-                    try {
-                        $handleProperty->setValue($handleType->getHandleValue($handleProperty, $context));
-                    } catch (ObjectHandlerException $e) {
-                        $violationList->add($handleProperty->buildViolation($e->getMessage()));
-                        continue;
-                    } catch (\Throwable $e) {
-                        $violationList->add($handleProperty->buildViolation($e->getMessage()));
-                        continue;
-                    }
+            if (null !== $this->validator) {
+                // TODO: Переделать все на $validatorContext
+                $validatorContext = $this->validator->startContext();
+                $propertyViolationList = $validatorContext->validatePropertyValue($object, $propertyName, $handleValue)->getViolations();
+                if ($propertyViolationList->count() > 0) {
+                    $violationList->addAll($propertyViolationList);
+                    continue;
                 }
-            } else {
-                throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
             }
 
-            $property->setValue($object, $handleProperty->getValue());
+            try {
+                $handleProperty = $this->handleProperty($refProperty, $handleValue, $context);
+            } catch (ObjectHandlerException $e) {
+                $violationList->add($e->buildViolation());
+                continue;
+            }
+
+            $refProperty->setValue($object, $handleProperty->getValue());
         }
 
         return $violationList;
+    }
+
+    /**
+     * @param \ReflectionProperty $refProperty
+     * @param $value
+     * @param array $context
+     *
+     * @return HandleProperty
+     * @throws HandlerException
+     * @throws ObjectHandlerException
+     */
+    public function handleProperty(\ReflectionProperty $refProperty, $value, array $context = []): HandleProperty
+    {
+        $handleProperty = new HandleProperty($value, $refProperty);
+        $handleType = $this->getHandleType($handleProperty);
+
+        if (null === $handleType) {
+            throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
+        }
+
+        // symfony validation
+
+        if (null === $value && !$handleProperty->allowsNull()) {
+            throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
+        }
+
+        if ($handleProperty->isNull()) {
+            return $handleProperty;
+        }
+
+        try {
+            $resultValue = $handleType->getHandleValue($handleProperty, $context);
+        } catch (\Throwable $e) {
+            throw new InvalidHandleValueException($handleProperty, $e->getMessage(), null, $e);
+        }
+        $handleProperty->setValue($resultValue);
+
+        return $handleProperty;
     }
 
     protected function getHandleType(HandleProperty $propertyValue): ?HandleTypeInterface
@@ -68,10 +115,5 @@ class ObjectHandler implements ObjectHandlerInterface
         }
 
         return null;
-    }
-
-    protected function isNull(HandleProperty $handleProperty): bool
-    {
-        return null === $handleProperty->getInitialValue() && $handleProperty->allowsNull();
     }
 }

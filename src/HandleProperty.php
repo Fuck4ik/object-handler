@@ -84,4 +84,9 @@ class HandleProperty
     {
         return $this->allowsNull;
     }
+
+    public function isNull(): bool
+    {
+        return null === $this->getInitialValue() && $this->allowsNull();
+    }
 }
