@@ -3,7 +3,9 @@
 namespace Omasn\ObjectHandler\Exception;
 
 use Omasn\ObjectHandler\HandleProperty;
-use Symfony\Component\Validator\ConstraintViolation;
+use Omasn\ObjectHandler\ViolationPropertyMapInterface;
+use Symfony\Component\Validator\ConstraintViolationInterface;
+use Symfony\Component\Validator\ConstraintViolationList;
 
 abstract class ObjectHandlerException extends \Exception
 {
@@ -29,7 +31,26 @@ abstract class ObjectHandlerException extends \Exception
         return $this->property;
     }
 
-    public function buildViolation(): ConstraintViolation
+    /**
+     * @return ConstraintViolationList|ViolationPropertyMapInterface
+     */
+    public function getViolationList()
+    {
+        if ($violationsMap = $this->getViolationPropertyMap()) {
+            return $violationsMap;
+        }
+
+        return new ConstraintViolationList([
+            $this->property->buildViolation($this->getMessage())
+        ]);
+    }
+
+    protected function getViolationPropertyMap(): ?ViolationPropertyMapInterface
+    {
+        return null;
+    }
+
+    protected function buildViolation(): ConstraintViolationInterface
     {
         return $this->property->buildViolation($this->getMessage());
     }

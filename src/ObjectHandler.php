@@ -6,18 +6,10 @@ use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
 use Omasn\ObjectHandler\Exception\NotBlankHandleValueException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
-use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ObjectHandler implements ObjectHandlerInterface
 {
-    private ?ValidatorInterface $validator;
-
-    public function __construct(ValidatorInterface $validator = null)
-    {
-        $this->validator = $validator;
-    }
-
     /**
      * @var HandleTypeInterface[]
      */
@@ -32,25 +24,24 @@ class ObjectHandler implements ObjectHandlerInterface
      * @param $object
      * @param array $data
      * @param array $context
-     * @return ConstraintViolationList
+     * @return ViolationPropertyMapInterface
      * @throws \ReflectionException
      * @throws HandlerException
      */
-    public function handle($object, array $data, array $context = []): ConstraintViolationList
+    public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface
     {
         $reflector = new \ReflectionClass($object);
 
-        $violationList = new ConstraintViolationList();
+        $violationsMap = new ViolationPropertyMap();
+        $validator = $this->getValidator($context);
         foreach ($reflector->getProperties() as $refProperty) {
             $propertyName = $refProperty->getName();
             $handleValue = $data[$propertyName] ?? null;
 
-            if (null !== $this->validator) {
-                // TODO: Переделать все на $validatorContext
-                $validatorContext = $this->validator->startContext();
-                $propertyViolationList = $validatorContext->validatePropertyValue($object, $propertyName, $handleValue)->getViolations();
+            if (null !== $validator) {
+                $propertyViolationList = $validator->validatePropertyValue($object, $propertyName, $handleValue);
                 if ($propertyViolationList->count() > 0) {
-                    $violationList->addAll($propertyViolationList);
+                    $violationsMap->set($propertyName, $propertyViolationList);
                     continue;
                 }
             }
@@ -58,14 +49,14 @@ class ObjectHandler implements ObjectHandlerInterface
             try {
                 $handleProperty = $this->handleProperty($refProperty, $handleValue, $context);
             } catch (ObjectHandlerException $e) {
-                $violationList->add($e->buildViolation());
+                $violationsMap->set($propertyName, $e->getViolationList());
                 continue;
             }
 
             $refProperty->setValue($object, $handleProperty->getValue());
         }
 
-        return $violationList;
+        return $violationsMap;
     }
 
     /**
@@ -86,8 +77,6 @@ class ObjectHandler implements ObjectHandlerInterface
             throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
         }
 
-        // symfony validation
-
         if (null === $value && !$handleProperty->allowsNull()) {
             throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
         }
@@ -98,12 +87,25 @@ class ObjectHandler implements ObjectHandlerInterface
 
         try {
             $resultValue = $handleType->getHandleValue($handleProperty, $context);
+        } catch (ObjectHandlerException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             throw new InvalidHandleValueException($handleProperty, $e->getMessage(), null, $e);
         }
         $handleProperty->setValue($resultValue);
 
         return $handleProperty;
+    }
+
+    protected function getValidator(array $context): ValidatorInterface
+    {
+        $validator = $context['validator'] ?? null;
+
+        if ($validator instanceof ValidatorInterface) {
+            return $validator;
+        }
+
+        return null;
     }
 
     protected function getHandleType(HandleProperty $propertyValue): ?HandleTypeInterface

@@ -4,13 +4,12 @@ namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
-use Symfony\Component\Validator\ConstraintViolationList;
 
 interface ObjectHandlerInterface
 {
     public function addHandleType(HandleTypeInterface $handleType): void;
 
-    public function handle($object, array $data, array $context = []): ConstraintViolationList;
+    public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface;
 
     /**
      * @param \ReflectionProperty $refProperty
