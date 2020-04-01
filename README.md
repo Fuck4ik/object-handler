@@ -17,23 +17,41 @@ $ composer require omasn/object-handler
 <?php
 
 use Omasn\ObjectHandler\HandleTypes\HandleStringType;
+use Omasn\ObjectHandler\HandleTypes\HandleIntType;
+use Omasn\ObjectHandler\HandleTypes\HandleBoolType;
 use Omasn\ObjectHandler\ObjectHandler;
 
-// create a object handler
+// create a object handler and configure project handle types
 $objectHandler = new ObjectHandler();
 $objectHandler->addHandleType(new HandleStringType());
+$objectHandler->addHandleType(new HandleIntType());
+$objectHandler->addHandleType(new HandleBoolType());
 
 
 $object = new class {
-    public string $test;
+    public string $text;
+    public int $count;
+    public bool $isActive;
 };
 
-$violList = $objectHandler->handle($object, [
-    'test' => 123,
+$violationsMap = $objectHandler->handle($object, [
+    'text' => 123,
+    'count' => '5',
+    'isActive' => 0,
 ]);
 
-echo $object->test;
-// '123'
+$violationsMap->count(); // Count handle validation errors
+
+var_dump($object);
+// object(class@anonymous)#277 (3) {
+//     ["text"]=>
+//     string(3) "123"
+//     ["count"]=>
+//     int(5)
+//     ["isActive"]=>
+//     bool(false)
+//   }
+
 ```
 
 ## About

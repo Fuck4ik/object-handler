@@ -52,7 +52,7 @@ class ViolationPropertyMap implements \IteratorAggregate, ViolationPropertyMapIn
      */
     public function has(string $propertyPath): bool
     {
-        return isset($this->violations[$propertyPath]);
+        return isset($this->propertyMap[$propertyPath]);
     }
 
     /**
@@ -95,7 +95,7 @@ class ViolationPropertyMap implements \IteratorAggregate, ViolationPropertyMapIn
      */
     public function offsetExists($propertyPath): bool
     {
-        return $this->has($propertyPath);
+        return $this->has((string)$propertyPath);
     }
 
     /**
@@ -103,7 +103,7 @@ class ViolationPropertyMap implements \IteratorAggregate, ViolationPropertyMapIn
      */
     public function offsetGet($propertyPath)
     {
-        return $this->get($propertyPath);
+        return $this->get((string)$propertyPath);
     }
 
     /**

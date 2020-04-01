@@ -97,7 +97,7 @@ class ObjectHandler implements ObjectHandlerInterface
         return $handleProperty;
     }
 
-    protected function getValidator(array $context): ValidatorInterface
+    protected function getValidator(array $context): ?ValidatorInterface
     {
         $validator = $context['validator'] ?? null;
 

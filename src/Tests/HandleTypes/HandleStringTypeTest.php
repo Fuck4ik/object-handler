@@ -55,8 +55,7 @@ class HandleStringTypeTest extends TestCase
                 'test' => $value['handle'],
             ]);
 
-            $this->assertArrayHasKey(0, $violList);
-            $this->assertSame($violList->get(0)->getPropertyPath(), 'test');
+            $this->assertTrue($violList->has('test'));
         }
     }
 }
