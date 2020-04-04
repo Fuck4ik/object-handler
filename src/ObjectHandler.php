@@ -10,6 +10,13 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ObjectHandler implements ObjectHandlerInterface
 {
+    private HandleDriverInterface $driver;
+
+    public function __construct(HandleDriverInterface $driver)
+    {
+        $this->driver = $driver;
+    }
+
     /**
      * @var HandleTypeInterface[]
      */
@@ -31,10 +38,11 @@ class ObjectHandler implements ObjectHandlerInterface
     public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface
     {
         $reflector = new \ReflectionClass($object);
-
+        $refProperties = $reflector->getProperties($this->driver->getPropertyFilters());
         $violationsMap = new ViolationPropertyMap();
         $validator = $this->getValidator($context);
-        foreach ($reflector->getProperties() as $refProperty) {
+
+        foreach ($refProperties as $refProperty) {
             $propertyName = $refProperty->getName();
             $handleValue = $data[$propertyName] ?? null;
 
@@ -53,7 +61,7 @@ class ObjectHandler implements ObjectHandlerInterface
                 continue;
             }
 
-            $refProperty->setValue($object, $handleProperty->getValue());
+            $this->driver->setPropertyValue($object, $refProperty, $handleProperty->getValue());
         }
 
         return $violationsMap;
