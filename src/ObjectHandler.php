@@ -85,7 +85,7 @@ class ObjectHandler implements ObjectHandlerInterface
             throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
         }
 
-        if (null === $value && !$handleProperty->allowsNull()) {
+        if (null === $value && !$handleProperty->allowsNull() && !$refProperty->isDefault()) {
             throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
         }
 
