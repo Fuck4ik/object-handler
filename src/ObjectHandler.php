@@ -44,7 +44,15 @@ class ObjectHandler implements ObjectHandlerInterface
 
         foreach ($refProperties as $refProperty) {
             $propertyName = $refProperty->getName();
-            $handleValue = $data[$propertyName] ?? null;
+
+            if (array_key_exists($propertyName, $data)) {
+                $handleValue = $data[$propertyName];
+            } else {
+                if ($refProperty->isInitialized($object) && null !== $refProperty->getValue($object)) {
+                    continue;
+                }
+                $handleValue = null;
+            }
 
             if (null !== $validator) {
                 $propertyViolationList = $validator->validatePropertyValue($object, $propertyName, $handleValue);
