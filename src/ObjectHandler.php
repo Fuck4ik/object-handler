@@ -38,17 +38,17 @@ class ObjectHandler implements ObjectHandlerInterface
     public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface
     {
         $reflector = new \ReflectionClass($object);
-        $refProperties = $reflector->getProperties($this->driver->getPropertyFilters());
+        $reflProperties = $reflector->getProperties($this->driver->getPropertyFilters());
         $violationsMap = new ViolationPropertyMap();
         $validator = $this->getValidator($context);
 
-        foreach ($refProperties as $refProperty) {
-            $propertyName = $refProperty->getName();
+        foreach ($reflProperties as $reflProperty) {
+            $propertyName = $reflProperty->getName();
 
             if (array_key_exists($propertyName, $data)) {
                 $handleValue = $data[$propertyName];
             } else {
-                if ($refProperty->isInitialized($object) && null !== $refProperty->getValue($object)) {
+                if ($reflProperty->isInitialized($object) && null !== $reflProperty->getValue($object)) {
                     continue;
                 }
                 $handleValue = null;
@@ -63,20 +63,21 @@ class ObjectHandler implements ObjectHandlerInterface
             }
 
             try {
-                $handleProperty = $this->handleProperty($refProperty, $handleValue, $context);
+                $context['is_initialized'] = $reflProperty->isInitialized($object);
+                $handledProperty = $this->handleProperty($reflProperty, $handleValue, $context);
             } catch (ObjectHandlerException $e) {
                 $violationsMap->set($propertyName, $e->getViolationList());
                 continue;
             }
 
-            $this->driver->setPropertyValue($object, $refProperty, $handleProperty->getValue());
+            $this->driver->setPropertyValue($object, $reflProperty, $handledProperty->getValue());
         }
 
         return $violationsMap;
     }
 
     /**
-     * @param \ReflectionProperty $refProperty
+     * @param \ReflectionProperty $reflProperty
      * @param $value
      * @param array $context
      *
@@ -84,16 +85,17 @@ class ObjectHandler implements ObjectHandlerInterface
      * @throws HandlerException
      * @throws ObjectHandlerException
      */
-    public function handleProperty(\ReflectionProperty $refProperty, $value, array $context = []): HandleProperty
+    public function handleProperty(\ReflectionProperty $reflProperty, $value, array $context = []): HandleProperty
     {
-        $handleProperty = new HandleProperty($value, $refProperty);
+        $handleProperty = new HandleProperty($value, $reflProperty);
         $handleType = $this->getHandleType($handleProperty);
 
         if (null === $handleType) {
             throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
         }
 
-        if (null === $value && !$handleProperty->allowsNull() && !$refProperty->isDefault()) {
+        $isInitialized = $context['is_initialized'] ?? false;
+        if (!$isInitialized && null === $value && !$handleProperty->allowsNull()) {
             throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
         }
 

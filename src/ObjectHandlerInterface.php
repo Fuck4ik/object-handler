@@ -12,7 +12,7 @@ interface ObjectHandlerInterface
     public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface;
 
     /**
-     * @param \ReflectionProperty $refProperty
+     * @param \ReflectionProperty $reflProperty
      * @param $value
      * @param array $context
      *
@@ -20,5 +20,5 @@ interface ObjectHandlerInterface
      * @throws HandlerException
      * @throws ObjectHandlerException
      */
-    public function handleProperty(\ReflectionProperty $refProperty, $value, array $context = []): HandleProperty;
+    public function handleProperty(\ReflectionProperty $reflProperty, $value, array $context = []): HandleProperty;
 }
