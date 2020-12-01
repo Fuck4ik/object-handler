@@ -1,46 +1,38 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
 use Symfony\Component\Validator\ConstraintViolation;
 
-class HandleProperty
+final class HandleProperty
 {
-    private string $propertyPath;
-
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $initialValue;
-
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     private $value;
-
+    private string $propertyPath;
     private string $type;
-
     private bool $allowsNull;
+    private bool $isInitialized;
 
     /**
-     * HandleProperty constructor.
-     *
-     * @param $initialValue
-     * @param \ReflectionProperty $property
-     * @throws HandlerException
+     * @param mixed $initialValue
      */
-    public function __construct($initialValue, \ReflectionProperty $property)
-    {
-        $propertyType = $property->getType();
-        if (!$propertyType instanceof \ReflectionNamedType) {
-            throw new HandlerException(sprintf('Property "%s" not have named type', $property->getName()));
-        }
-        $this->type = $propertyType->getName();
+    public function __construct(
+        $initialValue,
+        string $propertyPath,
+        string $type,
+        bool $allowsNull,
+        bool $isInitialized
+    ) {
         $this->initialValue = $initialValue;
         $this->value = $initialValue;
-        $this->propertyPath = $property->getName();
-        $this->allowsNull = $propertyType->allowsNull();
+        $this->propertyPath = $propertyPath;
+        $this->type = $type;
+        $this->allowsNull = $allowsNull;
+        $this->isInitialized = $isInitialized;
     }
 
     public function getPropertyPath(): string
@@ -88,5 +80,10 @@ class HandleProperty
     public function isNull(): bool
     {
         return null === $this->getInitialValue() && $this->allowsNull();
+    }
+
+    public function isInitialized(): bool
+    {
+        return $this->isInitialized;
     }
 }

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
@@ -9,16 +11,15 @@ interface ObjectHandlerInterface
 {
     public function addHandleType(HandleTypeInterface $handleType): void;
 
-    public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface;
+    /**
+     * @throws \ReflectionException
+     * @throws HandlerException
+     */
+    public function handle(object $object, array $data, array $context = []): ViolationPropertyMapInterface;
 
     /**
-     * @param \ReflectionProperty $reflProperty
-     * @param $value
-     * @param array $context
-     *
-     * @return HandleProperty
      * @throws HandlerException
      * @throws ObjectHandlerException
      */
-    public function handleProperty(\ReflectionProperty $reflProperty, $value, array $context = []): HandleProperty;
+    public function handleProperty(HandleProperty $handleProperty, array $context = []): HandleProperty;
 }

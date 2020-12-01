@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
@@ -10,6 +12,11 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ObjectHandler implements ObjectHandlerInterface
 {
+    /**
+     * @var HandleTypeInterface[]
+     */
+    protected array $handleTypes = [];
+
     private HandleDriverInterface $driver;
 
     public function __construct(HandleDriverInterface $driver)
@@ -17,25 +24,16 @@ class ObjectHandler implements ObjectHandlerInterface
         $this->driver = $driver;
     }
 
-    /**
-     * @var HandleTypeInterface[]
-     */
-    protected array $handleTypes = [];
-
     public function addHandleType(HandleTypeInterface $handleType): void
     {
         $this->handleTypes[$handleType->getId()] = $handleType;
     }
 
     /**
-     * @param $object
-     * @param array $data
-     * @param array $context
-     * @return ViolationPropertyMapInterface
      * @throws \ReflectionException
      * @throws HandlerException
      */
-    public function handle($object, array $data, array $context = []): ViolationPropertyMapInterface
+    public function handle(object $object, array $data, array $context = []): ViolationPropertyMapInterface
     {
         $reflector = new \ReflectionClass($object);
         $reflProperties = $reflector->getProperties($this->driver->getPropertyFilters());
@@ -63,8 +61,8 @@ class ObjectHandler implements ObjectHandlerInterface
             }
 
             try {
-                $context['is_initialized'] = $reflProperty->isInitialized($object);
-                $handledProperty = $this->handleProperty($reflProperty, $handleValue, $context);
+                $handledProperty = $this->createHandleProperty($reflProperty, $handleValue, $object);
+                $this->handleProperty($handledProperty, $context);
             } catch (ObjectHandlerException $e) {
                 $violationsMap->set($propertyName, $e->getViolationList());
                 continue;
@@ -77,25 +75,47 @@ class ObjectHandler implements ObjectHandlerInterface
     }
 
     /**
-     * @param \ReflectionProperty $reflProperty
-     * @param $value
-     * @param array $context
+     * @param mixed $value
      *
-     * @return HandleProperty
+     * @throws HandlerException
+     */
+    private function createHandleProperty(\ReflectionProperty $reflProperty, $value, object $object): HandleProperty
+    {
+        $propertyType = $reflProperty->getType();
+        if (!$propertyType instanceof \ReflectionNamedType) {
+            throw new HandlerException(sprintf('Property "%s" not have named type', $reflProperty->getName()));
+        }
+
+        try {
+            $isInitialized = $reflProperty->isInitialized($object);
+        } catch (\ReflectionException $e) {
+            $reflProperty->setAccessible(true);
+            $isInitialized = $reflProperty->isInitialized($object);
+            $reflProperty->setAccessible(false);
+        }
+
+        return new HandleProperty(
+            $value,
+            $reflProperty->getName(),
+            $propertyType->getName(),
+            $propertyType->allowsNull(),
+            $isInitialized
+        );
+    }
+
+    /**
      * @throws HandlerException
      * @throws ObjectHandlerException
      */
-    public function handleProperty(\ReflectionProperty $reflProperty, $value, array $context = []): HandleProperty
+    public function handleProperty(HandleProperty $handleProperty, array $context = []): HandleProperty
     {
-        $handleProperty = new HandleProperty($value, $reflProperty);
         $handleType = $this->getHandleType($handleProperty);
 
         if (null === $handleType) {
             throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
         }
 
-        $isInitialized = $context['is_initialized'] ?? false;
-        if (!$isInitialized && null === $value && !$handleProperty->allowsNull()) {
+        if (!$handleProperty->isInitialized() && null === $handleProperty->getInitialValue() && !$handleProperty->allowsNull()) {
             throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
         }
 
