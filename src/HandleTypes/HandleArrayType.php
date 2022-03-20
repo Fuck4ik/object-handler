@@ -1,24 +1,23 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\HandleTypes;
 
+use Omasn\ObjectHandler\HandleContextInterface;
 use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleType;
+use Symfony\Component\PropertyInfo\Type;
 
-class HandleArrayType extends HandleType
+final class HandleArrayType extends HandleType
 {
     public function getId(): string
     {
-        return 'array';
+        return Type::BUILTIN_TYPE_ARRAY;
     }
 
-    public function getHandleValue(HandleProperty $handleProperty, array $context = []): ?array
+    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): array
     {
         return (array)$handleProperty->getInitialValue();
-    }
-
-    public function supports(HandleProperty $handleProperty): bool
-    {
-        return 'array' === $handleProperty->getType();
     }
 }

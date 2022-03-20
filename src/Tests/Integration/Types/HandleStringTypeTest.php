@@ -1,23 +1,31 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Omasn\ObjectHandler\Tests\HandleTypes;
+declare(strict_types=1);
 
-use Omasn\ObjectHandler\Drivers\PublicPropertyDriver;
-use Omasn\ObjectHandler\Drivers\SetMethodDriver;
+namespace Omasn\ObjectHandler\Tests\Integration\Types;
+
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleTypes\HandleStringType;
 use Omasn\ObjectHandler\ObjectHandler;
+use Omasn\ObjectHandler\Tests\Integration\PropertyInfoTrait;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class HandleStringTypeTest extends TestCase
 {
+    use PropertyInfoTrait;
+
     /**
      * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler(new PublicPropertyDriver());
+        $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleStringType());
 
         $validValues = [
@@ -32,15 +40,14 @@ class HandleStringTypeTest extends TestCase
         ];
 
         foreach ($validValues as $value) {
-            $object = new class {
+            $object = new class() {
                 public string $test;
             };
 
-            $violList = $objectHandler->handle($object, [
+            $objectHandler->handleObject($object, [
                 'test' => $value['handle'],
             ]);
 
-            $this->assertSame($violList->count(), 0);
             $this->assertSame($object->test, $value['wait']);
         }
 
@@ -49,15 +56,18 @@ class HandleStringTypeTest extends TestCase
         ];
 
         foreach ($invalidValues as $value) {
-            $object = new class {
+            $object = new class() {
                 public string $test;
             };
 
-            $violList = $objectHandler->handle($object, [
-                'test' => $value['handle'],
-            ]);
-
-            $this->assertTrue($violList->has('test'));
+            try {
+                $objectHandler->handleObject($object, [
+                    'test' => $value['handle'],
+                ]);
+                $this->fail(sprintf('Dont excepted exception %s', ViolationListException::class));
+            } catch (ViolationListException $e) {
+                $this->assertSame($e->getViolationList()->count(), 1);
+            }
         }
     }
 
@@ -67,7 +77,7 @@ class HandleStringTypeTest extends TestCase
      */
     public function testOneSetMethod(): void
     {
-        $objectHandler = new ObjectHandler(new SetMethodDriver());
+        $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleStringType());
 
         $validValues = [
@@ -82,22 +92,24 @@ class HandleStringTypeTest extends TestCase
         ];
 
         foreach ($validValues as $value) {
-            $object = new class {
+            $object = new class() {
                 private string $test;
 
-                public function setTest(string $value): void {
+                public function setTest(string $value): void
+                {
                     $this->test = $value;
                 }
-                public function getTest(): string {
+
+                public function getTest(): string
+                {
                     return $this->test;
                 }
             };
 
-            $violList = $objectHandler->handle($object, [
+            $objectHandler->handleObject($object, [
                 'test' => $value['handle'],
             ]);
 
-            $this->assertSame($violList->count(), 0);
             $this->assertSame($object->getTest(), $value['wait']);
         }
 
@@ -106,22 +118,28 @@ class HandleStringTypeTest extends TestCase
         ];
 
         foreach ($invalidValues as $value) {
-            $object = new class {
+            $object = new class() {
                 private string $test;
 
-                public function setTest(string $value): void {
+                public function setTest(string $value): void
+                {
                     $this->test = $value;
                 }
-                public function getTest(): string {
+
+                public function getTest(): string
+                {
                     return $this->test;
                 }
             };
 
-            $violList = $objectHandler->handle($object, [
-                'test' => $value['handle'],
-            ]);
-
-            $this->assertTrue($violList->has('test'));
+            try {
+                $objectHandler->handleObject($object, [
+                    'test' => $value['handle'],
+                ]);
+                $this->fail(sprintf('Dont excepted exception %s', ViolationListException::class));
+            } catch (ViolationListException $e) {
+                $this->assertSame($e->getViolationList()->count(), 1);
+            }
         }
     }
 }

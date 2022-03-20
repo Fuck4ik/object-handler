@@ -1,24 +1,31 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Omasn\ObjectHandler\Tests\HandleTypes;
+declare(strict_types=1);
 
-use Omasn\ObjectHandler\Drivers\PublicPropertyDriver;
-use Omasn\ObjectHandler\Drivers\SetMethodDriver;
+namespace Omasn\ObjectHandler\Tests\Integration\Types;
+
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleTypes\HandleFloatType;
-use Omasn\ObjectHandler\HandleTypes\HandleStringType;
 use Omasn\ObjectHandler\ObjectHandler;
+use Omasn\ObjectHandler\Tests\Integration\PropertyInfoTrait;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ * @coversNothing
+ */
 class HandleFloatTypeTest extends TestCase
 {
+    use PropertyInfoTrait;
+
     /**
      * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler(new PublicPropertyDriver());
+        $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleFloatType());
 
         $validValues = [
@@ -36,37 +43,39 @@ class HandleFloatTypeTest extends TestCase
             ],
             [
                 'handle' => 0,
-                'wait' => 0.0
+                'wait' => 0.0,
             ],
         ];
 
         foreach ($validValues as $value) {
-            $object = new class {
+            $object = new class() {
                 public float $test;
             };
 
-            $violList = $objectHandler->handle($object, [
+            $objectHandler->handleObject($object, [
                 'test' => $value['handle'],
             ]);
 
-            $this->assertSame($violList->count(), 0);
             $this->assertSame($object->test, $value['wait']);
         }
 
         $invalidValues = [
-//            ['handle' => []],
+            ['handle' => []],
         ];
 
         foreach ($invalidValues as $value) {
-            $object = new class {
+            $object = new class() {
                 public float $test;
             };
 
-            $violList = $objectHandler->handle($object, [
-                'test' => $value['handle'],
-            ]);
-
-            $this->assertTrue($violList->has('test'));
+            try {
+                $objectHandler->handleObject($object, [
+                    'test' => $value['handle'],
+                ]);
+                $this->fail(sprintf('Dont excepted exception %s', ViolationListException::class));
+            } catch (ViolationListException $e) {
+                $this->assertSame($e->getViolationList()->count(), 1);
+            }
         }
     }
 
@@ -76,7 +85,7 @@ class HandleFloatTypeTest extends TestCase
      */
     public function testOneSetMethod(): void
     {
-        $objectHandler = new ObjectHandler(new SetMethodDriver());
+        $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleFloatType());
 
         $validValues = [
@@ -94,51 +103,59 @@ class HandleFloatTypeTest extends TestCase
             ],
             [
                 'handle' => 0,
-                'wait' => 0.0
+                'wait' => 0.0,
             ],
         ];
 
         foreach ($validValues as $value) {
-            $object = new class {
+            $object = new class() {
                 private float $test;
 
-                public function setTest(float $value): void {
+                public function setTest(float $value): void
+                {
                     $this->test = $value;
                 }
-                public function getTest(): float {
+
+                public function getTest(): float
+                {
                     return $this->test;
                 }
             };
 
-            $violList = $objectHandler->handle($object, [
+            $objectHandler->handleObject($object, [
                 'test' => $value['handle'],
             ]);
 
-            $this->assertSame($violList->count(), 0);
             $this->assertSame($object->getTest(), $value['wait']);
         }
 
         $invalidValues = [
-//            ['handle' => []],
+            ['handle' => []],
         ];
 
         foreach ($invalidValues as $value) {
-            $object = new class {
+            $object = new class() {
                 private float $test;
 
-                public function setTest(float $value): void {
+                public function setTest(float $value): void
+                {
                     $this->test = $value;
                 }
-                public function getTest(): float {
+
+                public function getTest(): float
+                {
                     return $this->test;
                 }
             };
 
-            $violList = $objectHandler->handle($object, [
-                'test' => $value['handle'],
-            ]);
-
-            $this->assertTrue($violList->has('test'));
+            try {
+                $objectHandler->handleObject($object, [
+                    'test' => $value['handle'],
+                ]);
+                $this->fail(sprintf('Dont excepted exception %s', ViolationListException::class));
+            } catch (ViolationListException $e) {
+                $this->assertSame($e->getViolationList()->count(), 1);
+            }
         }
     }
 }

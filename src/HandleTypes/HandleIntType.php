@@ -1,29 +1,38 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\HandleTypes;
 
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
+use Omasn\ObjectHandler\HandleContextInterface;
 use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleType;
+use Symfony\Component\PropertyInfo\Type;
 
-class HandleIntType extends HandleType
+final class HandleIntType extends HandleType
 {
     public function getId(): string
     {
-        return 'int';
+        return Type::BUILTIN_TYPE_INT;
     }
 
-    public function getHandleValue(HandleProperty $handleProperty, array $context = []): ?int
+    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): ?int
     {
-        if (!is_numeric($handleProperty->getInitialValue())) {
-            throw new InvalidHandleValueException($handleProperty, 'Invalid numeric format');
+        $value = $handleProperty->getInitialValue();
+
+        if (!is_scalar($value)) {
+            throw new InvalidHandleValueException($handleProperty,
+                sprintf('Expected of type "scalar", "%s" given', get_debug_type($value))
+            );
         }
 
-        return (int)$handleProperty->getInitialValue();
-    }
+        if (!is_numeric($value)) {
+            throw new InvalidHandleValueException($handleProperty,
+                sprintf('Expected of type "numeric", "%s" given', get_debug_type($value))
+            );
+        }
 
-    public function supports(HandleProperty $handleProperty): bool
-    {
-        return 'int' === $handleProperty->getType();
+        return (int)$value;
     }
 }

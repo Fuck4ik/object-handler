@@ -1,24 +1,32 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\HandleTypes;
 
+use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
+use Omasn\ObjectHandler\HandleContextInterface;
 use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleType;
+use Symfony\Component\PropertyInfo\Type;
 
-class HandleStringType extends HandleType
+final class HandleStringType extends HandleType
 {
     public function getId(): string
     {
-        return 'string';
+        return Type::BUILTIN_TYPE_STRING;
     }
 
-    public function getHandleValue(HandleProperty $handleProperty, array $context = []): ?string
+    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): ?string
     {
-        return (string)$handleProperty->getInitialValue();
-    }
+        $value = $handleProperty->getInitialValue();
 
-    public function supports(HandleProperty $handleProperty): bool
-    {
-        return 'string' === $handleProperty->getType();
+        if (is_array($value)) {
+            throw new InvalidHandleValueException($handleProperty,
+                'Expected of type "string", "array" given'
+            );
+        }
+
+        return (string)$value;
     }
 }

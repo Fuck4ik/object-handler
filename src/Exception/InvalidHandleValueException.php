@@ -1,7 +1,9 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\Exception;
 
-class InvalidHandleValueException extends ObjectHandlerException
+final class InvalidHandleValueException extends ObjectHandlerException
 {
 }

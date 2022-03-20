@@ -5,23 +5,42 @@ declare(strict_types=1);
 namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
-use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
-use Omasn\ObjectHandler\Exception\NotBlankHandleValueException;
-use Omasn\ObjectHandler\Exception\ObjectHandlerException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Omasn\ObjectHandler\Exception\ViolationListException;
+use Omasn\ObjectHandler\Extractor\ConstructorDefaultValueExtractor;
+use Omasn\ObjectHandler\Extractor\DefaultValueExtractorInterface;
+use Omasn\ObjectHandler\Extractor\PropertyDefaultValueExtractor;
+use Omasn\ObjectHandler\Helper\ArrayHelper;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
+use RuntimeException;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
+use Symfony\Component\PropertyInfo\Type;
+use Symfony\Component\Validator\ConstraintViolationList;
+use Symfony\Component\Validator\ConstraintViolationListInterface;
 
-class ObjectHandler implements ObjectHandlerInterface
+final class ObjectHandler extends AbstractHandler
 {
     /**
      * @var HandleTypeInterface[]
      */
     protected array $handleTypes = [];
 
-    private HandleDriverInterface $driver;
+    private PropertyInfoExtractorInterface $propertyInfoExtractor;
+    private PropertyAccessorInterface $propertyAccessor;
+    private ?ViolationFactoryInterface $violationFactory;
 
-    public function __construct(HandleDriverInterface $driver)
-    {
-        $this->driver = $driver;
+    public function __construct(
+        PropertyInfoExtractorInterface $propertyInfoExtractor,
+        PropertyAccessorInterface $propertyAccessor = null,
+        ViolationFactoryInterface $violationFactory = null
+    ) {
+        $this->propertyInfoExtractor = $propertyInfoExtractor;
+        $this->propertyAccessor = $propertyAccessor ?? new PropertyAccessor();
+        $this->violationFactory = $violationFactory ?? new ViolationFactory();
+        parent::__construct($violationFactory);
     }
 
     public function addHandleType(HandleTypeInterface $handleType): void
@@ -30,120 +49,170 @@ class ObjectHandler implements ObjectHandlerInterface
     }
 
     /**
-     * @throws \ReflectionException
+     * Создает новый экземпляр класса на основе переданных данных $data через конструктор
+     * Использованные данные из $data удаляются через unset
+     *
      * @throws HandlerException
+     * @throws ReflectionException
+     * @throws ViolationListException
      */
-    public function handle(object $object, array $data, array $context = []): ViolationPropertyMapInterface
-    {
-        $reflector = new \ReflectionClass($object);
-        $reflProperties = $reflector->getProperties($this->driver->getPropertyFilters());
-        $violationsMap = new ViolationPropertyMap();
-        $validator = $this->getValidator($context);
+    public function instantiateObject(
+        string $class,
+        array &$data,
+        HandleContextInterface $context = null,
+        DefaultValueExtractorInterface $defaultValueExtractor = null
+    ): object {
+        $reflClass = new ReflectionClass($class);
 
-        foreach ($reflProperties as $reflProperty) {
-            $propertyName = $reflProperty->getName();
+        if (null === $constructor = $reflClass->getConstructor()) {
+            return new $class();
+        }
 
-            if (array_key_exists($propertyName, $data)) {
-                $handleValue = $data[$propertyName];
-            } else {
-                if ($reflProperty->isInitialized($object) && null !== $reflProperty->getValue($object)) {
-                    continue;
+        if (!$constructor->isPublic()) {
+            return $reflClass->newInstanceWithoutConstructor();
+        }
+
+        if (0 === $constructor->getNumberOfRequiredParameters()) {
+            return new $class();
+        }
+
+        if ([] === $data || !ArrayHelper::isAssoc($data)) {
+            throw new RuntimeException('invalid data');
+        }
+
+        $context = $context ?? new HandleContext();
+        $defaultValueExtractor = $defaultValueExtractor ?? new ConstructorDefaultValueExtractor();
+        $violationList = new ConstraintViolationList();
+
+        $params = [];
+        foreach ($constructor->getParameters() as $parameter) {
+            $parameterName = $parameter->getName();
+            $objProp = $this->createObjectProperty($class, $parameterName, $defaultValueExtractor);
+
+            if (!array_key_exists($parameterName, $data)) {
+                try {
+                    if (!$this->ifSkippingHandle($objProp)) {
+                        $params[$parameterName] = null;
+                    }
+                } catch (RuntimeException $e) {
+                    $violationList->add($this->violationFactory->createNotBlank($parameterName));
                 }
-                $handleValue = null;
-            }
 
-            if (null !== $validator) {
-                $propertyViolationList = $validator->validatePropertyValue($object, $propertyName, $handleValue);
-                if ($propertyViolationList->count() > 0) {
-                    $violationsMap->set($propertyName, $propertyViolationList);
-                    continue;
-                }
-            }
-
-            try {
-                $handledProperty = $this->createHandleProperty($reflProperty, $handleValue, $object);
-                $this->handleProperty($handledProperty, $context);
-            } catch (ObjectHandlerException $e) {
-                $violationsMap->set($propertyName, $e->getViolationList());
                 continue;
             }
 
-            $this->driver->setPropertyValue($object, $reflProperty, $handledProperty->getValue());
+            $handleProperty = new HandleProperty($objProp, $data[$parameterName]);
+            $this->resolveHandleProperty(
+                $handleProperty,
+                $violationList,
+                $context ?? new HandleContext()
+            );
+            if ($handleProperty->isHandled()) {
+                $params[$parameterName] = $handleProperty->getValue();
+                unset($data[$parameterName]);
+            }
         }
 
-        return $violationsMap;
+        if ($violationList->count() > 0) {
+            throw new ViolationListException($violationList);
+        }
+
+
+        if ($constructor->isConstructor()) {
+            return $reflClass->newInstanceArgs($params);
+        }
+
+        return $constructor->invokeArgs(null, $params);
     }
 
     /**
-     * @param mixed $value
+     * В переданный экземпляр класса устанавливаются данные из $data
+     * По инструкции драйвера, работает с публичными свойствами и\или сеттерами
      *
      * @throws HandlerException
+     * @throws ViolationListException
      */
-    private function createHandleProperty(\ReflectionProperty $reflProperty, $value, object $object): HandleProperty
-    {
-        $propertyType = $reflProperty->getType();
-        if (!$propertyType instanceof \ReflectionNamedType) {
-            throw new HandlerException(sprintf('Property "%s" not have named type', $reflProperty->getName()));
+    public function handleObject(
+        object $object,
+        array $data,
+        HandleContextInterface $context = null,
+        DefaultValueExtractorInterface $defaultValueExtractor = null
+    ): void {
+        $context = $context ?? new HandleContext();
+        $defaultValueExtractor = $defaultValueExtractor ?? new PropertyDefaultValueExtractor();
+        $violationList = new ConstraintViolationList();
+
+        $objectClass = get_class($object);
+        $properties = $this->propertyInfoExtractor->getProperties($objectClass);
+        foreach ($properties as $propertyName) {
+            if (!$this->propertyAccessor->isWritable($object, $propertyName)) {
+                continue;
+            }
+
+            $objProp = $this->createObjectProperty($objectClass, $propertyName, $defaultValueExtractor);
+
+            if (!array_key_exists($propertyName, $data) || null === $data[$propertyName]) {
+                try {
+                    $ignoreMissing = $context->isIgnoreMissingData()
+                        || (new ReflectionProperty($objectClass, $propertyName))->isInitialized($object);
+                } catch (ReflectionException $e) {
+                    $ignoreMissing = false;
+                }
+                if ($ignoreMissing) {
+                    continue;
+                }
+
+                try {
+                    if ($this->ifSkippingHandle($objProp)) {
+                        continue;
+                    }
+                } catch (RuntimeException $e) {
+                    $violationList->add($this->violationFactory->createNotBlank($propertyName));
+
+                    continue;
+                }
+                $handleProperty = HandleProperty::handledNull($objProp);
+            }
+
+            if (!isset($handleProperty)) {
+                $handleProperty = new HandleProperty($objProp, $data[$propertyName]);
+                $this->resolveHandleProperty(
+                    $handleProperty,
+                    $violationList,
+                    $context,
+                );
+            }
+
+            if ($handleProperty->isHandled()) {
+                $this->propertyAccessor->setValue($object, $propertyName, $handleProperty->getValue());
+            }
+            unset($handleProperty);
         }
 
-        try {
-            $isInitialized = $reflProperty->isInitialized($object);
-        } catch (\ReflectionException $e) {
-            $reflProperty->setAccessible(true);
-            $isInitialized = $reflProperty->isInitialized($object);
-            $reflProperty->setAccessible(false);
+        if ($violationList->count() > 0) {
+            throw new ViolationListException($violationList);
         }
-
-        return new HandleProperty(
-            $value,
-            $reflProperty->getName(),
-            $propertyType->getName(),
-            $propertyType->allowsNull(),
-            $isInitialized
-        );
     }
 
     /**
      * @throws HandlerException
-     * @throws ObjectHandlerException
+     * @throws ReflectionException
+     * @throws ViolationListException
+     *
+     * @template T
+     * @psalm-param class-string<T> $class
+     * @return T
      */
-    public function handleProperty(HandleProperty $handleProperty, array $context = []): HandleProperty
-    {
-        $handleType = $this->getHandleType($handleProperty);
+    public function handle(
+        string $class,
+        array $data,
+        HandleContextInterface $context = null,
+        DefaultValueExtractorInterface $defaultValueExtractor = null
+    ): object {
+        $object = $this->instantiateObject($class, $data, $context, $defaultValueExtractor);
+        $this->handleObject($object, $data, $context, $defaultValueExtractor);
 
-        if (null === $handleType) {
-            throw new HandlerException(sprintf('HandleType not found for type "%s"', $handleProperty->getType()));
-        }
-
-        if (!$handleProperty->isInitialized() && null === $handleProperty->getInitialValue() && !$handleProperty->allowsNull()) {
-            throw new NotBlankHandleValueException($handleProperty, 'This value should not be blank.');
-        }
-
-        if ($handleProperty->isNull()) {
-            return $handleProperty;
-        }
-
-        try {
-            $resultValue = $handleType->getHandleValue($handleProperty, $context);
-        } catch (ObjectHandlerException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            throw new InvalidHandleValueException($handleProperty, $e->getMessage(), null, $e);
-        }
-        $handleProperty->setValue($resultValue);
-
-        return $handleProperty;
-    }
-
-    protected function getValidator(array $context): ?ValidatorInterface
-    {
-        $validator = $context['validator'] ?? null;
-
-        if ($validator instanceof ValidatorInterface) {
-            return $validator;
-        }
-
-        return null;
+        return $object;
     }
 
     protected function getHandleType(HandleProperty $propertyValue): ?HandleTypeInterface
@@ -155,5 +224,51 @@ class ObjectHandler implements ObjectHandlerInterface
         }
 
         return null;
+    }
+
+    private function ifSkippingHandle(ObjectProperty $objProp): bool
+    {
+        if ($objProp->isDefaultValue()) {
+            return true;
+        }
+
+        if ($objProp->getType()->isNullable()) {
+            return false;
+        }
+
+        throw new \RuntimeException('Property data required');
+    }
+
+    /**
+     * @throws HandlerException
+     */
+    private function createObjectProperty(
+        string $class,
+        string $property,
+        DefaultValueExtractorInterface $defaultValueExtractor
+    ): ObjectProperty {
+        return new ObjectProperty(
+            $property,
+            $this->getPropertyType($class, $property),
+            $defaultValueExtractor->hasDefaultValue($class, $property)
+        );
+    }
+
+    /**
+     * @throws HandlerException
+     */
+    private function getPropertyType(string $class, string $property): Type
+    {
+        $types = $this->propertyInfoExtractor->getTypes($class, $property);
+
+        if (null === $types || 0 === count($types)) {
+            return self::getUndefinedType();
+        }
+
+        if (count($types) > 1) {
+            throw new HandlerException(sprintf('Union types are not allowed (%s::%s)', $class, $property));
+        }
+
+        return $types[0];
     }
 }

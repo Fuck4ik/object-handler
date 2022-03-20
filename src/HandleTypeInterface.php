@@ -1,20 +1,23 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
+use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
+use Omasn\ObjectHandler\Exception\ViolationListException;
 
 interface HandleTypeInterface
 {
+    public function getId(): string;
+
     /**
-     * @param HandleProperty $handleProperty
-     * @param array $context
-     * @return mixed
      * @throws ObjectHandlerException
+     * @throws ViolationListException
+     * @throws HandlerException
      */
-    public function getHandleValue(HandleProperty $handleProperty, array $context = []);
+    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context);
 
     public function supports(HandleProperty $handleProperty): bool;
-
-    public function getId(): string ;
 }

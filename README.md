@@ -37,7 +37,7 @@ $object = new class {
     public bool $active;
 };
 
-$violationsMap = $objectHandler->handle($object, [
+$violationsMap = $objectHandler->handleObject($object, [
     'text' => 123,
     'count' => '5',
     'active' => 0,
