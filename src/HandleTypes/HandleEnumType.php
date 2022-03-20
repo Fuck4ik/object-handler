@@ -13,34 +13,35 @@ final class HandleEnumType extends HandleType
 {
     public function getId(): string
     {
-        if (PHP_VERSION_ID < 81000) {
-            throw new \RuntimeException('Support only PHP >= 8.1.0');
+        if (PHP_VERSION_ID < 80100) {
+            throw new \RuntimeException('Support only PHP >= 8.0.0');
         }
 
         return \BackedEnum::class;
     }
 
     /**
-     * @return \BackedEnum|object
-     *
      * @throws InvalidHandleValueException
+     *
+     * @return \BackedEnum|object
      */
     public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context)
     {
-        if (PHP_VERSION_ID < 81000) {
-            throw new \RuntimeException('Support only PHP >= 8.1.0');
+        if (PHP_VERSION_ID < 80100) {
+            throw new \RuntimeException('Support only PHP >= 8.0.0');
         }
 
         /** @var \BackedEnum $class */
         $class = $handleProperty->getType()->getClassName();
         $value = $handleProperty->getInitialValue();
 
-        if ($value instanceof \BackedEnum::class) {
+        if ($value instanceof \BackedEnum) {
             return $value;
         }
 
         if (!is_scalar($value)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 sprintf('Expected of type "scalar", "%s" given', get_class($value))
             );
         }
@@ -50,8 +51,8 @@ final class HandleEnumType extends HandleType
 
     public function supports(HandleProperty $handleProperty): bool
     {
-        if (PHP_VERSION_ID < 81000) {
-            throw new \RuntimeException('Support only PHP >= 8.1.0');
+        if (PHP_VERSION_ID < 80100) {
+            throw new \RuntimeException('Support only PHP >= 8.0.0');
         }
 
         $class = $handleProperty->getType()->getClassName();

@@ -22,7 +22,8 @@ final class HandleStringType extends HandleType
         $value = $handleProperty->getInitialValue();
 
         if (is_array($value)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 'Expected of type "string", "array" given'
             );
         }

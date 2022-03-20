@@ -26,6 +26,7 @@ interface ObjectHandlerInterface
      *
      * @template T
      * @psalm-param class-string<T> $class
+     *
      * @return T
      */
     public function handle(

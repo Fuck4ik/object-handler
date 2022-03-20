@@ -22,13 +22,15 @@ final class HandleIntType extends HandleType
         $value = $handleProperty->getInitialValue();
 
         if (!is_scalar($value)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 sprintf('Expected of type "scalar", "%s" given', get_debug_type($value))
             );
         }
 
         if (!is_numeric($value)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 sprintf('Expected of type "numeric", "%s" given', get_debug_type($value))
             );
         }

@@ -19,7 +19,6 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Validator\ConstraintViolationList;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 final class ObjectHandler extends AbstractHandler
 {
@@ -117,7 +116,6 @@ final class ObjectHandler extends AbstractHandler
             throw new ViolationListException($violationList);
         }
 
-
         if ($constructor->isConstructor()) {
             return $reflClass->newInstanceArgs($params);
         }
@@ -201,6 +199,7 @@ final class ObjectHandler extends AbstractHandler
      *
      * @template T
      * @psalm-param class-string<T> $class
+     *
      * @return T
      */
     public function handle(

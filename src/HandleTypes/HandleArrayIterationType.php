@@ -94,7 +94,7 @@ final class HandleArrayIterationType extends HandleType
 
     public function supports(HandleProperty $handleProperty): bool
     {
-        return $handleProperty->getType()->getBuiltinType() === Type::BUILTIN_TYPE_ARRAY
+        return Type::BUILTIN_TYPE_ARRAY === $handleProperty->getType()->getBuiltinType()
             && $handleProperty->getType()->isCollection();
     }
 

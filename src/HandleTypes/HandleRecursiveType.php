@@ -45,7 +45,8 @@ final class HandleRecursiveType extends HandleType
     {
         $data = $handleProperty->getInitialValue();
         if (!is_array($data)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 sprintf('Expected of type "array", "%s" given', get_debug_type($data))
             );
         }

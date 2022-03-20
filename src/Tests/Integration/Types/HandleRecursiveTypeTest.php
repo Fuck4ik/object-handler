@@ -31,7 +31,8 @@ class HandleRecursiveTypeTest extends TestCase
         $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleRecursiveType(
             $objectHandler,
-            fn(HandleProperty $property) => null !== $property->getType()->getClassName()));
+            fn(HandleProperty $property) => null !== $property->getType()->getClassName()
+        ));
         $objectHandler->addHandleType(new HandleIntType());
         $objectHandler->addHandleType(new HandleArrayIterationType($objectHandler));
 

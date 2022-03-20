@@ -37,7 +37,8 @@ final class HandleDateTimeImmutableType extends HandleType
         }
 
         if (!is_scalar($value)) {
-            throw new InvalidHandleValueException($handleProperty,
+            throw new InvalidHandleValueException(
+                $handleProperty,
                 sprintf('Expected of type "scalar", "%s" given', get_class($value))
             );
         }
@@ -47,6 +48,11 @@ final class HandleDateTimeImmutableType extends HandleType
         }
 
         return $this->createFromDefaultFormat($handleProperty);
+    }
+
+    public function supports(HandleProperty $handleProperty): bool
+    {
+        return DateTimeImmutable::class === $handleProperty->getType()->getClassName();
     }
 
     /**
@@ -59,6 +65,7 @@ final class HandleDateTimeImmutableType extends HandleType
 
         if (false === $dateTime) {
             $errorMessage = DateTimeImmutable::getLastErrors() ?: ['Invalid format'];
+
             throw new InvalidHandleValueException($handleProperty, implode(' ', $errorMessage));
         }
 
@@ -81,10 +88,5 @@ final class HandleDateTimeImmutableType extends HandleType
         } catch (Exception $e) {
             throw new InvalidHandleValueException($handleProperty, $e->getMessage(), 0, $e);
         }
-    }
-
-    public function supports(HandleProperty $handleProperty): bool
-    {
-        return DateTimeImmutable::class === $handleProperty->getType()->getClassName();
     }
 }
