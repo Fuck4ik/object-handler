@@ -45,7 +45,6 @@ abstract class AbstractHandler implements ObjectHandlerInterface
         } catch (ObjectHandlerException|ViolationListException|HandlerException $e) {
             throw $e;
         } catch (Throwable $e) {
-            dd($e);
             throw new InvalidHandleValueException($handleProperty, $e->getMessage(), 0, $e);
         }
         $handleProperty->setValue($resolveValue);
