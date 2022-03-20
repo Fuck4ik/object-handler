@@ -72,7 +72,7 @@ var_dump($object);
 
 ### Author
 
-Roman Yastrebov - <tirastwo@gmail.com> - <https://www.instagram.com/omasn.hawk/>
+Roman Yastrebov (Telegram: <https://t.me/omasn>)
 
 ### License
 
