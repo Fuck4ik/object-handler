@@ -16,17 +16,27 @@ $ composer require omasn/object-handler
 ```php
 <?php
 
-use Omasn\ObjectHandler\Drivers\PublicPropertyDriver;
 use Omasn\ObjectHandler\HandleTypes\HandleBoolType;
 use Omasn\ObjectHandler\HandleTypes\HandleIntType;
 use Omasn\ObjectHandler\HandleTypes\HandleStringType;
 use Omasn\ObjectHandler\ObjectHandler;
+use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 
-// create handle driver
-$driver = new PublicPropertyDriver();
+$phpDocExtractor = new PhpDocExtractor();
+$reflectionExtractor = new ReflectionExtractor();
+
+$propertyInfoExtractor = new PropertyInfoExtractor(
+    [$reflectionExtractor],
+    [$phpDocExtractor, $reflectionExtractor],
+    [],
+    [$reflectionExtractor],
+    [$reflectionExtractor]
+);
 
 // create a object handler and configure project handle types
-$objectHandler = new ObjectHandler($driver);
+$objectHandler = new ObjectHandler($propertyInfoExtractor);
 $objectHandler->addHandleType(new HandleStringType());
 $objectHandler->addHandleType(new HandleIntType());
 $objectHandler->addHandleType(new HandleBoolType());
@@ -37,13 +47,15 @@ $object = new class {
     public bool $active;
 };
 
-$violationsMap = $objectHandler->handleObject($object, [
-    'text' => 123,
-    'count' => '5',
-    'active' => 0,
-]);
-
-$violationsMap->count(); // Count handle validation errors
+try {
+    $objectHandler->handleObject($object, [
+        'text' => 123,
+        'count' => '5',
+        'active' => 0,
+    ]);
+} catch (\Omasn\ObjectHandler\Exception\ViolationListException $e) {
+    $e->getViolationList()->count(); // Count handle validation errors
+}
 
 var_dump($object);
 // object(class@anonymous)#277 (3) {
