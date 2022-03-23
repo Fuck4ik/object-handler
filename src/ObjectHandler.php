@@ -214,15 +214,20 @@ final class ObjectHandler extends AbstractHandler
         return $object;
     }
 
-    protected function getHandleType(HandleProperty $propertyValue): ?HandleTypeInterface
+    /**
+     * @throws HandlerException
+     */
+    protected function getHandleType(HandleProperty $handleProperty): HandleTypeInterface
     {
         foreach ($this->handleTypes as $handleType) {
-            if ($handleType->supports($propertyValue)) {
+            if ($handleType->supports($handleProperty)) {
                 return $handleType;
             }
         }
 
-        return null;
+        $type = $handleProperty->getType()->getClassName() ?: $handleProperty->getType()->getBuiltinType();
+
+        throw new HandlerException(sprintf('HandleType not found for type "%s"', $type));
     }
 
     private function ifSkippingHandle(ObjectProperty $objProp): bool

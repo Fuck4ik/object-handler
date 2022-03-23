@@ -32,11 +32,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
             throw new InvalidHandleValueException($handleProperty, 'InitialValue must be not null');
         }
 
-        if (null === $handleType = $this->getHandleType($handleProperty)) {
-            $type = $handleProperty->getType()->getClassName() ?: $handleProperty->getType()->getBuiltinType();
-
-            throw new HandlerException(sprintf('HandleType not found for type "%s"', $type));
-        }
+        $handleType = $this->getHandleType($handleProperty);
 
         try {
             if (null === $resolveValue = $handleType->resolveValue($handleProperty, $context)) {
@@ -94,5 +90,8 @@ abstract class AbstractHandler implements ObjectHandlerInterface
         return new Type($name, true);
     }
 
-    abstract protected function getHandleType(HandleProperty $propertyValue): ?HandleTypeInterface;
+    /**
+     * @throws HandlerException
+     */
+    abstract protected function getHandleType(HandleProperty $handleProperty): HandleTypeInterface;
 }
