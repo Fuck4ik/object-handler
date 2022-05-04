@@ -56,8 +56,19 @@ abstract class AbstractHandler implements ObjectHandlerInterface
         ConstraintViolationListInterface $violationList,
         HandleContextInterface $context
     ): void {
-        if (null !== $preHandleValueCallback = $context->getPreHandleValueCallback()) {
-            $preHandleValueCallback($handleProperty);
+        $preHandleValueCallback = $context->getPreHandleValueCallback();
+        if (null !== $preHandleValueCallback && !$preHandleValueCallback($handleProperty)) {
+            return;
+        }
+
+        if (null === $handleProperty->getInitialValue()) {
+            if ($handleProperty->getType()->isNullable()) {
+                $handleProperty->setValue(null);
+            } else {
+                $violationList->add($this->violationFactory->createNotBlank($handleProperty->getPropertyPath()));
+            }
+
+            return;
         }
 
         if ($handleProperty->getType()->getBuiltinType() === self::getUndefinedType()->getBuiltinType()) {
@@ -72,7 +83,10 @@ abstract class AbstractHandler implements ObjectHandlerInterface
             $violationList->add($this->violationFactory->createFromException($e));
         } catch (ViolationListException $e) {
             foreach ($e->getViolationList() as $violation) {
-                $violationList->add($this->violationFactory->fromViolationParent($violation, $handleProperty->getPropertyPath()));
+                $violationList->add($this->violationFactory->fromViolationParent(
+                    $violation,
+                    $handleProperty->getPropertyPath()
+                ));
             }
         }
     }

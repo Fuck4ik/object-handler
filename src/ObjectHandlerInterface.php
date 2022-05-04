@@ -40,6 +40,8 @@ interface ObjectHandlerInterface
      * Creates a new instance of the class based on the $data passed through the constructor
      * Used data from $data is removed via unset
      *
+     * @param class-string $class
+     *
      * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException

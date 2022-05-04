@@ -29,7 +29,7 @@ final class ObjectHandler extends AbstractHandler
 
     private PropertyInfoExtractorInterface $propertyInfoExtractor;
     private PropertyAccessorInterface $propertyAccessor;
-    private ?ViolationFactoryInterface $violationFactory;
+    private ViolationFactoryInterface $violationFactory;
 
     public function __construct(
         PropertyInfoExtractorInterface $propertyInfoExtractor,
@@ -50,6 +50,8 @@ final class ObjectHandler extends AbstractHandler
     /**
      * Создает новый экземпляр класса на основе переданных данных $data через конструктор
      * Использованные данные из $data удаляются через unset
+     *
+     * @param class-string $class
      *
      * @throws HandlerException
      * @throws ReflectionException
@@ -100,11 +102,11 @@ final class ObjectHandler extends AbstractHandler
                 continue;
             }
 
-            $handleProperty = new HandleProperty($objProp, $data[$parameterName]);
+            $handleProperty = new HandleProperty($objProp, $data[$parameterName] ?? null);
             $this->resolveHandleProperty(
                 $handleProperty,
                 $violationList,
-                $context ?? new HandleContext()
+                $context
             );
             if ($handleProperty->isHandled()) {
                 $params[$parameterName] = $handleProperty->getValue();
@@ -141,7 +143,10 @@ final class ObjectHandler extends AbstractHandler
         $violationList = new ConstraintViolationList();
 
         $objectClass = get_class($object);
-        $properties = $this->propertyInfoExtractor->getProperties($objectClass);
+        if (null === $properties = $this->propertyInfoExtractor->getProperties($objectClass)) {
+            return;
+        }
+
         foreach ($properties as $propertyName) {
             if (!$this->propertyAccessor->isWritable($object, $propertyName)) {
                 continue;
@@ -149,7 +154,7 @@ final class ObjectHandler extends AbstractHandler
 
             $objProp = $this->createObjectProperty($objectClass, $propertyName, $defaultValueExtractor);
 
-            if (!array_key_exists($propertyName, $data) || null === $data[$propertyName]) {
+            if (!array_key_exists($propertyName, $data)) {
                 try {
                     $ignoreMissing = $context->isIgnoreMissingData()
                         || (new ReflectionProperty($objectClass, $propertyName))->isInitialized($object);
@@ -169,17 +174,14 @@ final class ObjectHandler extends AbstractHandler
 
                     continue;
                 }
-                $handleProperty = HandleProperty::handledNull($objProp);
             }
 
-            if (!isset($handleProperty)) {
-                $handleProperty = new HandleProperty($objProp, $data[$propertyName]);
-                $this->resolveHandleProperty(
-                    $handleProperty,
-                    $violationList,
-                    $context,
-                );
-            }
+            $handleProperty = new HandleProperty($objProp, $data[$propertyName] ?? null);
+            $this->resolveHandleProperty(
+                $handleProperty,
+                $violationList,
+                $context,
+            );
 
             if ($handleProperty->isHandled()) {
                 $this->propertyAccessor->setValue($object, $propertyName, $handleProperty->getValue());
@@ -193,14 +195,14 @@ final class ObjectHandler extends AbstractHandler
     }
 
     /**
-     * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException
+     * @throws HandlerException
+     *
+     * @return T
      *
      * @template T
      * @psalm-param class-string<T> $class
-     *
-     * @return T
      */
     public function handle(
         string $class,
