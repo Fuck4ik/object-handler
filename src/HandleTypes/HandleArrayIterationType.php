@@ -56,7 +56,7 @@ final class HandleArrayIterationType extends HandleType
         $valueType = $this->getCollectionType($handleProperty);
         foreach ($values as $key => $value) {
             $handlePropertyValue = new HandleProperty(
-                new ObjectProperty($key . '.' . $handleProperty->getPropertyPath(), $valueType, false),
+                new ObjectProperty((string)$key, $valueType, false),
                 $value
             );
 
