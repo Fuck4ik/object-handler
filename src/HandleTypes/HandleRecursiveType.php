@@ -12,6 +12,7 @@ use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleType;
 use Omasn\ObjectHandler\ObjectHandlerInterface;
 use ReflectionException;
+use Symfony\Component\PropertyInfo\Type;
 
 final class HandleRecursiveType extends HandleType
 {
@@ -51,7 +52,24 @@ final class HandleRecursiveType extends HandleType
             );
         }
 
-        return $this->handler->handle($handleProperty->getType()->getClassName(), $data, $context);
+        if (null === $className = $this->extractClassName($handleProperty->getType())) {
+            throw new \RuntimeException('Don\'t support resolve this handle type');
+        }
+
+        return $this->handler->handle($className, $data, $context);
+    }
+
+    private function extractClassName(Type $type): ?string
+    {
+        if ($type->isCollection()) {
+            $collectionTypes = $type->getCollectionValueTypes();
+            if (1 !== count($collectionTypes)) {
+                throw new \RuntimeException('Request data don\'t support union types.');
+            }
+            return $collectionTypes[0]->getClassName();
+        }
+
+        return $type->getClassName();
     }
 
     public function supports(HandleProperty $handleProperty): bool
@@ -60,6 +78,10 @@ final class HandleRecursiveType extends HandleType
             return false;
         }
 
-        return $callback($handleProperty);
+        if (null === $className = $this->extractClassName($handleProperty->getType())) {
+            return false;
+        }
+
+        return $callback($handleProperty, $className);
     }
 }
