@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\RequireArgumentException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\Extractor\ConstructorDefaultValueExtractor;
 use Omasn\ObjectHandler\Extractor\DefaultValueExtractorInterface;
@@ -56,6 +57,7 @@ final class ObjectHandler extends AbstractHandler
      * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException
+     * @throws RequireArgumentException
      */
     public function instantiateObject(
         string $class,
@@ -85,6 +87,7 @@ final class ObjectHandler extends AbstractHandler
         $defaultValueExtractor = $defaultValueExtractor ?? new ConstructorDefaultValueExtractor();
         $violationList = new ConstraintViolationList();
 
+        $dontResolved = [];
         $params = [];
         foreach ($constructor->getParameters() as $parameter) {
             $parameterName = $parameter->getName();
@@ -111,7 +114,13 @@ final class ObjectHandler extends AbstractHandler
             if ($handleProperty->isHandled()) {
                 $params[$parameterName] = $handleProperty->getValue();
                 unset($data[$parameterName]);
+            } else {
+                $dontResolved[] = $handleProperty;
             }
+        }
+
+        if (count($dontResolved) > 0) {
+            throw new RequireArgumentException($dontResolved);
         }
 
         if ($violationList->count() > 0) {
@@ -195,14 +204,15 @@ final class ObjectHandler extends AbstractHandler
     }
 
     /**
-     * @throws ReflectionException
-     * @throws ViolationListException
-     * @throws HandlerException
-     *
      * @return T
      *
      * @template T
      * @psalm-param class-string<T> $class
+     *
+     * @throws ViolationListException
+     * @throws HandlerException
+     * @throws RequireArgumentException
+     * @throws ReflectionException
      */
     public function handle(
         string $class,
