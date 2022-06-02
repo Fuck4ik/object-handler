@@ -101,10 +101,6 @@ final class BaseFunctionalTest extends TestCase
         $objectHandler = new ObjectHandler($this->getPropertyInfo());
         $objectHandler->addHandleType(new HandleIntType());
 
-        $data1 = [];
-        $this->expectException(\RuntimeException::class);
-        $objectHandler->instantiateObject(ArrayTest1::class, $data1);
-
         $data2 = ['not assoc'];
         $this->expectException(\RuntimeException::class);
         $objectHandler->instantiateObject(ArrayTest1::class, $data2);

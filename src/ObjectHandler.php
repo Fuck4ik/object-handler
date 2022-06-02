@@ -79,7 +79,7 @@ final class ObjectHandler extends AbstractHandler
             return new $class();
         }
 
-        if ([] === $data || !ArrayHelper::isAssoc($data)) {
+        if ([] !== $data && !ArrayHelper::isAssoc($data)) {
             throw new RuntimeException('invalid data');
         }
 

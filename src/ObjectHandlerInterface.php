@@ -6,6 +6,7 @@ namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
+use Omasn\ObjectHandler\Exception\RequireArgumentException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\Extractor\DefaultValueExtractorInterface;
 use ReflectionException;
@@ -45,6 +46,7 @@ interface ObjectHandlerInterface
      * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException
+     * @throws RequireArgumentException
      */
     public function instantiateObject(
         string $class,
