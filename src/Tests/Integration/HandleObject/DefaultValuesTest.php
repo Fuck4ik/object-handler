@@ -20,9 +20,6 @@ final class DefaultValuesTest extends TestCase
 {
     use PropertyInfoTrait;
 
-    /**
-     * @throws HandlerException
-     */
     public function testSuccess(): void
     {
         $objectHandler = new ObjectHandler($this->getPropertyInfo());
@@ -46,9 +43,6 @@ final class DefaultValuesTest extends TestCase
         $this->assertFalse(isset($object->test4));
     }
 
-    /**
-     * @throws HandlerException
-     */
     public function testFailed(): void
     {
         $objectHandler = new ObjectHandler($this->getPropertyInfo());

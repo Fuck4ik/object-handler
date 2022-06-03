@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Omasn\ObjectHandler;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
@@ -22,7 +23,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
     }
 
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      * @throws ObjectHandlerException
      * @throws ViolationListException
      */
@@ -38,7 +39,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
             if (null === $resolveValue = $handleType->resolveValue($handleProperty, $context)) {
                 throw new InvalidHandleValueException($handleProperty, 'resolveValue must be not null');
             }
-        } catch (ObjectHandlerException|ViolationListException|HandlerException $e) {
+        } catch (ObjectHandlerException|ViolationListException $e) {
             throw $e;
         } catch (Throwable $e) {
             throw new InvalidHandleValueException($handleProperty, $e->getMessage(), 0, $e);
@@ -49,7 +50,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
     }
 
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      */
     public function resolveHandleProperty(
         HandleProperty $handleProperty,
@@ -103,9 +104,8 @@ abstract class AbstractHandler implements ObjectHandlerInterface
 
         return new Type($name, true);
     }
-
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      */
     abstract protected function getHandleType(HandleProperty $handleProperty): HandleTypeInterface;
 }

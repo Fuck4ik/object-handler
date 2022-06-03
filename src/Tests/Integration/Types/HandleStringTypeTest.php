@@ -20,7 +20,6 @@ class HandleStringTypeTest extends TestCase
     use PropertyInfoTrait;
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetPublic(): void
@@ -72,7 +71,6 @@ class HandleStringTypeTest extends TestCase
     }
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetMethod(): void

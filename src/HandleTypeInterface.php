@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 
@@ -15,7 +14,6 @@ interface HandleTypeInterface
     /**
      * @throws ObjectHandlerException
      * @throws ViolationListException
-     * @throws HandlerException
      */
     public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context);
 

@@ -6,7 +6,7 @@ namespace Omasn\ObjectHandler\Exception;
 
 use Omasn\ObjectHandler\HandleProperty;
 
-abstract class ObjectHandlerException extends \Exception
+abstract class ObjectHandlerException extends HandlerException
 {
     private HandleProperty $property;
 

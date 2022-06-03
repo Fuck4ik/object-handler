@@ -20,9 +20,6 @@ class HandleArrayTypeTest extends TestCase
 {
     use PropertyInfoTrait;
 
-    /**
-     * @throws HandlerException
-     */
     public function testOneSetPublic(): void
     {
         $objectHandler = new ObjectHandler($this->getPropertyInfo());
@@ -72,7 +69,6 @@ class HandleArrayTypeTest extends TestCase
     }
 
     /**
-     * @throws HandlerException
      * @throws ReflectionException
      */
     public function testOneSetMethod(): void

@@ -20,7 +20,6 @@ class HandleFloatTypeTest extends TestCase
     use PropertyInfoTrait;
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetPublic(): void
@@ -80,7 +79,6 @@ class HandleFloatTypeTest extends TestCase
     }
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetMethod(): void

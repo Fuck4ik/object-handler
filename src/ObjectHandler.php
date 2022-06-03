@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
 use Omasn\ObjectHandler\Exception\RequireArgumentException;
+use Omasn\ObjectHandler\Exception\UnionTypeException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\Extractor\ConstructorDefaultValueExtractor;
 use Omasn\ObjectHandler\Extractor\DefaultValueExtractorInterface;
@@ -54,10 +55,11 @@ final class ObjectHandler extends AbstractHandler
      *
      * @param class-string $class
      *
-     * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException
      * @throws RequireArgumentException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function instantiateObject(
         string $class,
@@ -138,8 +140,9 @@ final class ObjectHandler extends AbstractHandler
      * В переданный экземпляр класса устанавливаются данные из $data
      * По инструкции драйвера, работает с публичными свойствами и\или сеттерами
      *
-     * @throws HandlerException
      * @throws ViolationListException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function handleObject(
         object $object,
@@ -210,9 +213,10 @@ final class ObjectHandler extends AbstractHandler
      * @psalm-param class-string<T> $class
      *
      * @throws ViolationListException
-     * @throws HandlerException
      * @throws RequireArgumentException
      * @throws ReflectionException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function handle(
         string $class,
@@ -227,7 +231,7 @@ final class ObjectHandler extends AbstractHandler
     }
 
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      */
     protected function getHandleType(HandleProperty $handleProperty): HandleTypeInterface
     {
@@ -239,7 +243,7 @@ final class ObjectHandler extends AbstractHandler
 
         $type = $handleProperty->getType()->getClassName() ?: $handleProperty->getType()->getBuiltinType();
 
-        throw new HandlerException(sprintf('HandleType not found for type "%s"', $type));
+        throw new HandleTypeNotFoundException($type);
     }
 
     private function ifSkippingHandle(ObjectProperty $objProp): bool
@@ -256,7 +260,7 @@ final class ObjectHandler extends AbstractHandler
     }
 
     /**
-     * @throws HandlerException
+     * @throws UnionTypeException
      */
     private function createObjectProperty(
         string $class,
@@ -271,7 +275,7 @@ final class ObjectHandler extends AbstractHandler
     }
 
     /**
-     * @throws HandlerException
+     * @throws UnionTypeException
      */
     private function getPropertyType(string $class, string $property): Type
     {
@@ -282,7 +286,7 @@ final class ObjectHandler extends AbstractHandler
         }
 
         if (count($types) > 1) {
-            throw new HandlerException(sprintf('Union types are not allowed (%s::%s)', $class, $property));
+            throw new UnionTypeException($property, $class);
         }
 
         return $types[0];

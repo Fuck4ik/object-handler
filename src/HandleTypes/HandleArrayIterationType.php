@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Omasn\ObjectHandler\HandleTypes;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
-use Omasn\ObjectHandler\Exception\ObjectHandlerException;
+use Omasn\ObjectHandler\Exception\UnionTypeException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleContextInterface;
 use Omasn\ObjectHandler\HandleProperty;
@@ -41,8 +42,6 @@ final class HandleArrayIterationType extends HandleType
     /**
      * @throws HandlerException
      * @throws ReflectionException
-     * @throws ViolationListException
-     * @throws ObjectHandlerException
      */
     public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): array
     {
@@ -66,21 +65,28 @@ final class HandleArrayIterationType extends HandleType
 
             if ($valueType->isCollection()) {
                 $collectionResult[$key] = $this->resolveValue($handlePropertyValue, $context);
-            } elseif (null !== $className = $valueType->getClassName()) {
-                try {
-                    $collectionResult[$key] = $this->handler->handle($className, $value, $context);
-                } catch (ViolationListException $e) {
-                    foreach ($e->getViolationList() as $violation) {
-                        $violationList->add($this->violationFactory->fromViolationParent(
-                            $violation,
-                            $handlePropertyValue->getPropertyPath()
-                        ));
-                    }
-                }
             } else {
-                $this->handler->resolveHandleProperty($handlePropertyValue, $violationList, $context);
-                if ($handlePropertyValue->isHandled()) {
-                    $collectionResult[$key] = $handlePropertyValue->getValue();
+                try {
+                    $this->handler->resolveHandleProperty($handlePropertyValue, $violationList, $context);
+
+                    if ($handlePropertyValue->isHandled()) {
+                        $collectionResult[$key] = $handlePropertyValue->getValue();
+                    }
+                } catch (HandleTypeNotFoundException $e) {
+                    if (null !== $className = $valueType->getClassName()) {
+                        try {
+                            $collectionResult[$key] = $this->handler->handle($className, $value, $context);
+                        } catch (ViolationListException $e) {
+                            foreach ($e->getViolationList() as $violation) {
+                                $violationList->add($this->violationFactory->fromViolationParent(
+                                    $violation,
+                                    $handlePropertyValue->getPropertyPath()
+                                ));
+                            }
+                        }
+                    } else {
+                        throw new HandleTypeNotFoundException($valueType->getBuiltinType());
+                    }
                 }
             }
         }
@@ -99,7 +105,7 @@ final class HandleArrayIterationType extends HandleType
     }
 
     /**
-     * @throws HandlerException
+     * @throws UnionTypeException
      */
     private function getCollectionType(HandleProperty $handleProperty): Type
     {
@@ -110,7 +116,7 @@ final class HandleArrayIterationType extends HandleType
         }
 
         if (count($types) > 1) {
-            throw new HandlerException(sprintf('Union types are not allowed (%s)', $handleProperty->getPropertyPath()));
+            throw new UnionTypeException($handleProperty->getPropertyPath());
         }
 
         return $types[0];

@@ -23,7 +23,6 @@ class HandleRecursiveTypeTest extends TestCase
     use PropertyInfoTrait;
 
     /**
-     * @throws HandlerException
      * @throws ViolationListException
      */
     public function testSuccessCollection(): void

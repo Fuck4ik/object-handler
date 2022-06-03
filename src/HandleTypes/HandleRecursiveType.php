@@ -6,13 +6,12 @@ namespace Omasn\ObjectHandler\HandleTypes;
 
 use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
-use Omasn\ObjectHandler\Exception\ViolationListException;
+use Omasn\ObjectHandler\Exception\UnionTypeException;
 use Omasn\ObjectHandler\HandleContextInterface;
 use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleType;
 use Omasn\ObjectHandler\ObjectHandlerInterface;
 use ReflectionException;
-use Symfony\Component\PropertyInfo\Type;
 
 final class HandleRecursiveType extends HandleType
 {
@@ -37,10 +36,8 @@ final class HandleRecursiveType extends HandleType
     }
 
     /**
-     * @throws HandlerException
      * @throws ReflectionException
-     * @throws ViolationListException
-     * @throws InvalidHandleValueException
+     * @throws HandlerException
      */
     public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): object
     {
@@ -52,33 +49,41 @@ final class HandleRecursiveType extends HandleType
             );
         }
 
-        if (null === $className = $this->extractClassName($handleProperty->getType())) {
-            throw new \RuntimeException('Don\'t support resolve this handle type');
+        if (null === $className = $this->extractClassName($handleProperty)) {
+            throw new \RuntimeException('HandleType must not be resolved without first handling it through support');
         }
 
         return $this->handler->handle($className, $data, $context);
     }
 
-    private function extractClassName(Type $type): ?string
+    /**
+     * @throws UnionTypeException
+     */
+    private function extractClassName(HandleProperty $handleProperty): ?string
     {
+        $type = $handleProperty->getType();
         if ($type->isCollection()) {
             $collectionTypes = $type->getCollectionValueTypes();
             if (1 !== count($collectionTypes)) {
-                throw new \RuntimeException('Request data don\'t support union types.');
+                throw new UnionTypeException($handleProperty->getPropertyPath());
             }
+
             return $collectionTypes[0]->getClassName();
         }
 
         return $type->getClassName();
     }
 
+    /**
+     * @throws UnionTypeException
+     */
     public function supports(HandleProperty $handleProperty): bool
     {
         if (null === $callback = $this->support) {
             return false;
         }
 
-        if (null === $className = $this->extractClassName($handleProperty->getType())) {
+        if (null === $className = $this->extractClassName($handleProperty)) {
             return false;
         }
 

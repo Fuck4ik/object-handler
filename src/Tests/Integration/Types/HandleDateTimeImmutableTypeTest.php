@@ -20,7 +20,6 @@ class HandleDateTimeImmutableTypeTest extends TestCase
     use PropertyInfoTrait;
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetPublic(): void
@@ -73,7 +72,6 @@ class HandleDateTimeImmutableTypeTest extends TestCase
     }
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetMethod(): void

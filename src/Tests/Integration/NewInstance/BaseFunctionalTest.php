@@ -23,7 +23,6 @@ final class BaseFunctionalTest extends TestCase
 
     /**
      * @throws ViolationListException
-     * @throws HandlerException
      * @throws ReflectionException
      */
     public function testOneSetPublic(): void
@@ -57,7 +56,6 @@ final class BaseFunctionalTest extends TestCase
 
     /**
      * @throws ViolationListException
-     * @throws HandlerException
      * @throws ReflectionException
      */
     public function testExecConstructorCalc(): void
@@ -93,7 +91,6 @@ final class BaseFunctionalTest extends TestCase
 
     /**
      * @throws ViolationListException
-     * @throws HandlerException
      * @throws ReflectionException
      */
     public function testInvalidData(): void

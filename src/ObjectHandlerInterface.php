@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
 use Omasn\ObjectHandler\Exception\RequireArgumentException;
+use Omasn\ObjectHandler\Exception\UnionTypeException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\Extractor\DefaultValueExtractorInterface;
 use ReflectionException;
@@ -21,14 +22,17 @@ interface ObjectHandlerInterface
      * The passed instance of the class is set (implemented HandleType) to the data from $data
      * According symfony/property-info instructions
      *
-     * @throws HandlerException
-     * @throws ReflectionException
+     * @return T
      * @throws ViolationListException
      *
      * @template T
      * @psalm-param class-string<T> $class
      *
-     * @return T
+     * @throws ViolationListException
+     * @throws RequireArgumentException
+     * @throws ReflectionException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function handle(
         string $class,
@@ -43,10 +47,11 @@ interface ObjectHandlerInterface
      *
      * @param class-string $class
      *
-     * @throws HandlerException
      * @throws ReflectionException
      * @throws ViolationListException
      * @throws RequireArgumentException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function instantiateObject(
         string $class,
@@ -59,8 +64,9 @@ interface ObjectHandlerInterface
      * The passed instance of the class is set (implemented HandleType) to the data from $data
      * According symfony/property-info instructions
      *
-     * @throws HandlerException
      * @throws ViolationListException
+     * @throws HandleTypeNotFoundException
+     * @throws UnionTypeException
      */
     public function handleObject(
         object $object,
@@ -70,14 +76,14 @@ interface ObjectHandlerInterface
     ): void;
 
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      * @throws ObjectHandlerException
      * @throws ViolationListException
      */
     public function handleProperty(HandleProperty $handleProperty, HandleContextInterface $context): HandleProperty;
 
     /**
-     * @throws HandlerException
+     * @throws HandleTypeNotFoundException
      */
     public function resolveHandleProperty(
         HandleProperty $handleProperty,

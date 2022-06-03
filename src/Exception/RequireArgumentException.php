@@ -6,7 +6,7 @@ namespace Omasn\ObjectHandler\Exception;
 
 use Omasn\ObjectHandler\HandleProperty;
 
-final class RequireArgumentException extends \Exception
+final class RequireArgumentException extends HandlerException
 {
     /**
      * @var HandleProperty[]

@@ -6,7 +6,7 @@ namespace Omasn\ObjectHandler\Exception;
 
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
-final class ViolationListException extends \Exception
+final class ViolationListException extends HandlerException
 {
     private ConstraintViolationListInterface $violationList;
 

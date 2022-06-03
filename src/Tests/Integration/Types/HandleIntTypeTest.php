@@ -19,9 +19,6 @@ class HandleIntTypeTest extends TestCase
 {
     use PropertyInfoTrait;
 
-    /**
-     * @throws HandlerException
-     */
     public function testOneSetPublic(): void
     {
         $objectHandler = new ObjectHandler($this->getPropertyInfo());
@@ -72,7 +69,6 @@ class HandleIntTypeTest extends TestCase
     }
 
     /**
-     * @throws HandlerException
      * @throws \ReflectionException
      */
     public function testOneSetMethod(): void

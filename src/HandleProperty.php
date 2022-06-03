@@ -51,12 +51,4 @@ final class HandleProperty
     {
         return $this->valueHandled;
     }
-
-    public static function handledNull(ObjectProperty $property): HandleProperty
-    {
-        $handleProperty = new self($property, null);
-        $handleProperty->setValue(null);
-
-        return $handleProperty;
-    }
 }
