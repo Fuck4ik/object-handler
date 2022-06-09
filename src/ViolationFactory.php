@@ -40,12 +40,17 @@ final class ViolationFactory implements ViolationFactoryInterface
         ConstraintViolationInterface $violation,
         string $parentPropertyPath
     ): ConstraintViolationInterface {
+        $propertyPath = $parentPropertyPath;
+        if ('' !== trim($violation->getPropertyPath())) {
+            $propertyPath .= $violation->getPropertyPath();
+        }
+
         return new ConstraintViolation(
             $violation->getMessage(),
             $violation->getMessageTemplate(),
             $violation->getParameters(),
             $violation->getRoot(),
-            $parentPropertyPath . '.' . $violation->getPropertyPath(),
+            $propertyPath,
             $violation->getInvalidValue()
         );
     }
