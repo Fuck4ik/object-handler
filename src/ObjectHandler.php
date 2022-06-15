@@ -122,7 +122,7 @@ final class ObjectHandler extends AbstractHandler
         }
 
         if (count($dontResolved) > 0) {
-            throw new RequireArgumentException($dontResolved);
+            throw new RequireArgumentException($dontResolved, $violationList);
         }
 
         if ($violationList->count() > 0) {
