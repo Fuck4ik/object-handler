@@ -109,6 +109,7 @@ final class ObjectHandler extends AbstractHandler
 
             $handleProperty = new HandleProperty($objProp, $data[$parameterName] ?? null);
             $this->resolveHandleProperty(
+                $class,
                 $handleProperty,
                 $violationList,
                 $context
@@ -190,6 +191,7 @@ final class ObjectHandler extends AbstractHandler
 
             $handleProperty = new HandleProperty($objProp, $data[$propertyName] ?? null);
             $this->resolveHandleProperty(
+                $objectClass,
                 $handleProperty,
                 $violationList,
                 $context,

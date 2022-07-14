@@ -43,7 +43,7 @@ final class HandleArrayIterationType extends HandleType
      * @throws HandlerException
      * @throws ReflectionException
      */
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): array
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): array
     {
         $values = $handleProperty->getInitialValue();
         if (!is_iterable($values)) {
@@ -64,10 +64,10 @@ final class HandleArrayIterationType extends HandleType
             }
 
             if ($valueType->isCollection()) {
-                $collectionResult[$key] = $this->resolveValue($handlePropertyValue, $context);
+                $collectionResult[$key] = $this->resolveValue($class, $handlePropertyValue, $context);
             } else {
                 try {
-                    $this->handler->resolveHandleProperty($handlePropertyValue, $violationList, $context);
+                    $this->handler->resolveHandleProperty($class, $handlePropertyValue, $violationList, $context);
 
                     if ($handlePropertyValue->isHandled()) {
                         $collectionResult[$key] = $handlePropertyValue->getValue();

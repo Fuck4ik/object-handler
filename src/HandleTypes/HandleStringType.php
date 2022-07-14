@@ -17,7 +17,7 @@ final class HandleStringType extends HandleType
         return Type::BUILTIN_TYPE_STRING;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): ?string
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): ?string
     {
         $value = $handleProperty->getInitialValue();
 

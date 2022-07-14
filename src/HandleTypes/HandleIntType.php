@@ -17,7 +17,7 @@ final class HandleIntType extends HandleType
         return Type::BUILTIN_TYPE_INT;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): ?int
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): ?int
     {
         $value = $handleProperty->getInitialValue();
 

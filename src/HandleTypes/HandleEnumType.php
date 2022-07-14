@@ -25,14 +25,14 @@ final class HandleEnumType extends HandleType
      *
      * @return \BackedEnum|object
      */
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context)
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context)
     {
         if (PHP_VERSION_ID < 80100) {
             throw new \RuntimeException('Support only PHP >= 8.0.0');
         }
 
-        /** @var \BackedEnum $class */
-        $class = $handleProperty->getType()->getClassName();
+        /** @var \BackedEnum $enumClass */
+        $enumClass = $handleProperty->getType()->getClassName();
         $value = $handleProperty->getInitialValue();
 
         if ($value instanceof \BackedEnum) {
@@ -46,7 +46,7 @@ final class HandleEnumType extends HandleType
             );
         }
 
-        return $class::from($value);
+        return $enumClass::from($value);
     }
 
     public function supports(HandleProperty $handleProperty): bool

@@ -39,7 +39,7 @@ final class HandleRecursiveType extends HandleType
      * @throws ReflectionException
      * @throws HandlerException
      */
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): object
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): object
     {
         $data = $handleProperty->getInitialValue();
         if (!is_array($data)) {

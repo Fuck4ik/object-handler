@@ -17,7 +17,7 @@ final class HandleBoolType extends HandleType
         return Type::BUILTIN_TYPE_BOOL;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): bool
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): bool
     {
         $value = $handleProperty->getInitialValue();
 

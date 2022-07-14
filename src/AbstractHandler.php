@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
 use Omasn\ObjectHandler\Exception\InvalidHandleValueException;
 use Omasn\ObjectHandler\Exception\ObjectHandlerException;
@@ -23,12 +22,17 @@ abstract class AbstractHandler implements ObjectHandlerInterface
     }
 
     /**
+     * @param class-string|null $class
+     *
      * @throws HandleTypeNotFoundException
      * @throws ObjectHandlerException
      * @throws ViolationListException
      */
-    public function handleProperty(HandleProperty $handleProperty, HandleContextInterface $context): HandleProperty
-    {
+    public function handleProperty(
+        ?string $class,
+        HandleProperty $handleProperty,
+        HandleContextInterface $context
+    ): HandleProperty {
         if (null === $handleProperty->getInitialValue()) {
             throw new InvalidHandleValueException($handleProperty, 'InitialValue must be not null');
         }
@@ -36,7 +40,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
         $handleType = $this->getHandleType($handleProperty);
 
         try {
-            if (null === $resolveValue = $handleType->resolveValue($handleProperty, $context)) {
+            if (null === $resolveValue = $handleType->resolveValue($class, $handleProperty, $context)) {
                 throw new InvalidHandleValueException($handleProperty, 'resolveValue must be not null');
             }
         } catch (ObjectHandlerException|ViolationListException $e) {
@@ -53,12 +57,13 @@ abstract class AbstractHandler implements ObjectHandlerInterface
      * @throws HandleTypeNotFoundException
      */
     public function resolveHandleProperty(
+        ?string $class,
         HandleProperty $handleProperty,
         ConstraintViolationListInterface $violationList,
         HandleContextInterface $context
     ): void {
         $preHandleValueCallback = $context->getPreHandleValueCallback();
-        if (null !== $preHandleValueCallback && !$preHandleValueCallback($handleProperty)) {
+        if (null !== $preHandleValueCallback && !$preHandleValueCallback($handleProperty, $class)) {
             return;
         }
 
@@ -79,7 +84,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
         }
 
         try {
-            $this->handleProperty($handleProperty, $context);
+            $this->handleProperty($class, $handleProperty, $context);
         } catch (ObjectHandlerException $e) {
             $violationList->add($this->violationFactory->createFromException($e));
         } catch (ViolationListException $e) {
@@ -104,6 +109,7 @@ abstract class AbstractHandler implements ObjectHandlerInterface
 
         return new Type($name, true);
     }
+
     /**
      * @throws HandleTypeNotFoundException
      */

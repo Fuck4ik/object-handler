@@ -45,7 +45,10 @@ interface ObjectHandlerInterface
      * Creates a new instance of the class based on the $data passed through the constructor
      * Used data from $data is removed via unset
      *
+     * @template T
+     * @psalm-param class-string<T> $class
      * @param class-string $class
+     * @return T
      *
      * @throws ReflectionException
      * @throws ViolationListException
@@ -76,16 +79,25 @@ interface ObjectHandlerInterface
     ): void;
 
     /**
+     * @param class-string|null $class
+     *
      * @throws HandleTypeNotFoundException
      * @throws ObjectHandlerException
      * @throws ViolationListException
      */
-    public function handleProperty(HandleProperty $handleProperty, HandleContextInterface $context): HandleProperty;
+    public function handleProperty(
+        ?string $class,
+        HandleProperty $handleProperty,
+        HandleContextInterface $context
+    ): HandleProperty;
 
     /**
+     * @param class-string|null $class
+     *
      * @throws HandleTypeNotFoundException
      */
     public function resolveHandleProperty(
+        ?string $class,
         HandleProperty $handleProperty,
         ConstraintViolationListInterface $violationList,
         HandleContextInterface $context

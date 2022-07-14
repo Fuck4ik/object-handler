@@ -17,7 +17,7 @@ final class HandleFloatType extends HandleType
         return Type::BUILTIN_TYPE_FLOAT;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): float
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): float
     {
         $value = $handleProperty->getInitialValue();
 

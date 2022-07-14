@@ -12,10 +12,12 @@ interface HandleTypeInterface
     public function getId(): string;
 
     /**
+     * @param class-string|null $class
+     *
      * @throws ObjectHandlerException
      * @throws ViolationListException
      */
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context);
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context);
 
     public function supports(HandleProperty $handleProperty): bool;
 }

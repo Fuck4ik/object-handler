@@ -16,7 +16,7 @@ final class HandleArrayType extends HandleType
         return Type::BUILTIN_TYPE_ARRAY;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): array
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): array
     {
         return (array)$handleProperty->getInitialValue();
     }

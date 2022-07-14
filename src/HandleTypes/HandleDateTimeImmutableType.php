@@ -28,7 +28,7 @@ final class HandleDateTimeImmutableType extends HandleType
         return DateTimeImmutable::class;
     }
 
-    public function resolveValue(HandleProperty $handleProperty, HandleContextInterface $context): DateTimeImmutable
+    public function resolveValue(?string $class, HandleProperty $handleProperty, HandleContextInterface $context): DateTimeImmutable
     {
         $value = $handleProperty->getInitialValue();
 
