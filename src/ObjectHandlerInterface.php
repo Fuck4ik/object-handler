@@ -15,8 +15,6 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 interface ObjectHandlerInterface
 {
-    public function addHandleType(HandleTypeInterface $handleType): void;
-
     /**
      * Creates a new instance of the class based on the $data passed through the constructor
      * The passed instance of the class is set (implemented HandleType) to the data from $data

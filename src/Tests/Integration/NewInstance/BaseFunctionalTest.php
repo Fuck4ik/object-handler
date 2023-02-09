@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\Tests\Integration\NewInstance;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
+use Omasn\ObjectHandler\Exception\HandleTypeNotFoundException;
+use Omasn\ObjectHandler\Exception\RequireArgumentException;
+use Omasn\ObjectHandler\Exception\UnionTypeException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleTypes\HandleArrayType;
 use Omasn\ObjectHandler\HandleTypes\HandleIntType;
 use Omasn\ObjectHandler\ObjectHandler;
-use Omasn\ObjectHandler\Tests\Integration\PropertyInfoTrait;
 use PHPUnit\Framework\TestCase;
 use ReflectionException;
+use RuntimeException;
 
 /**
  * @internal
@@ -19,16 +21,16 @@ use ReflectionException;
  */
 final class BaseFunctionalTest extends TestCase
 {
-    use PropertyInfoTrait;
-
     /**
-     * @throws ViolationListException
      * @throws ReflectionException
+     * @throws ViolationListException
+     * @throws HandleTypeNotFoundException
+     * @throws RequireArgumentException
+     * @throws UnionTypeException
      */
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleArrayType());
+        $objectHandler = ObjectHandler::createSimple([new HandleArrayType()]);
 
         $validValues = [
             [
@@ -55,14 +57,15 @@ final class BaseFunctionalTest extends TestCase
     }
 
     /**
-     * @throws ViolationListException
      * @throws ReflectionException
+     * @throws ViolationListException
+     * @throws HandleTypeNotFoundException
+     * @throws RequireArgumentException
+     * @throws UnionTypeException
      */
     public function testExecConstructorCalc(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleArrayType());
-        $objectHandler->addHandleType(new HandleIntType());
+        $objectHandler = ObjectHandler::createSimple([new HandleArrayType(), new HandleIntType()]);
 
         $validValues = [
             [
@@ -90,16 +93,18 @@ final class BaseFunctionalTest extends TestCase
     }
 
     /**
-     * @throws ViolationListException
      * @throws ReflectionException
+     * @throws ViolationListException
+     * @throws HandleTypeNotFoundException
+     * @throws RequireArgumentException
+     * @throws UnionTypeException
      */
     public function testInvalidData(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleIntType());
+        $objectHandler = ObjectHandler::createSimple([new HandleIntType()]);
 
         $data2 = ['not assoc'];
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $objectHandler->instantiateObject(ArrayTest1::class, $data2);
     }
 }

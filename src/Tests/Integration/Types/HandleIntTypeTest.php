@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\Tests\Integration\Types;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
 use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleTypes\HandleIntType;
 use Omasn\ObjectHandler\ObjectHandler;
-use Omasn\ObjectHandler\Tests\Integration\PropertyInfoTrait;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,12 +15,9 @@ use PHPUnit\Framework\TestCase;
  */
 class HandleIntTypeTest extends TestCase
 {
-    use PropertyInfoTrait;
-
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleIntType());
+        $objectHandler = ObjectHandler::createSimple([new HandleIntType()]);
 
         $validValues = [
             [
@@ -68,13 +63,9 @@ class HandleIntTypeTest extends TestCase
         }
     }
 
-    /**
-     * @throws \ReflectionException
-     */
     public function testOneSetMethod(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleIntType());
+        $objectHandler = ObjectHandler::createSimple([new HandleIntType()]);
 
         $validValues = [
             [

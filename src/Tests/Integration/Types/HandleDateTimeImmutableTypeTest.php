@@ -17,15 +17,9 @@ use PHPUnit\Framework\TestCase;
  */
 class HandleDateTimeImmutableTypeTest extends TestCase
 {
-    use PropertyInfoTrait;
-
-    /**
-     * @throws \ReflectionException
-     */
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleDateTimeImmutableType());
+        $objectHandler = ObjectHandler::createSimple([new HandleDateTimeImmutableType()]);
 
         $validValues = [
             [
@@ -71,13 +65,9 @@ class HandleDateTimeImmutableTypeTest extends TestCase
         }
     }
 
-    /**
-     * @throws \ReflectionException
-     */
     public function testOneSetMethod(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleDateTimeImmutableType());
+        $objectHandler = ObjectHandler::createSimple([new HandleDateTimeImmutableType()]);
 
         $validValues = [
             [

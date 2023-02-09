@@ -18,12 +18,9 @@ use ReflectionException;
  */
 class HandleBoolTypeTest extends TestCase
 {
-    use PropertyInfoTrait;
-
     public function testOneSetPublic(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleBoolType());
+        $objectHandler = ObjectHandler::createSimple([new HandleBoolType()]);
 
         $validValues = [
             [
@@ -80,13 +77,9 @@ class HandleBoolTypeTest extends TestCase
         }
     }
 
-    /**
-     * @throws ReflectionException
-     */
     public function testOneSetMethod(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleBoolType());
+        $objectHandler = ObjectHandler::createSimple([new HandleBoolType()]);
 
         $validValues = [
             [

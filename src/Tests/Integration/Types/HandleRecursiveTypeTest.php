@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Omasn\ObjectHandler\Tests\Integration\Types;
 
-use Omasn\ObjectHandler\Exception\HandlerException;
-use Omasn\ObjectHandler\Exception\ViolationListException;
 use Omasn\ObjectHandler\HandleProperty;
 use Omasn\ObjectHandler\HandleTypes\HandleArrayIterationType;
 use Omasn\ObjectHandler\HandleTypes\HandleIntType;
 use Omasn\ObjectHandler\HandleTypes\HandleRecursiveType;
 use Omasn\ObjectHandler\ObjectHandler;
-use Omasn\ObjectHandler\Tests\Integration\PropertyInfoTrait;
+use Omasn\ObjectHandler\ObjectHandlerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,20 +18,20 @@ use PHPUnit\Framework\TestCase;
  */
 class HandleRecursiveTypeTest extends TestCase
 {
-    use PropertyInfoTrait;
-
-    /**
-     * @throws ViolationListException
-     */
     public function testSuccessCollection(): void
     {
-        $objectHandler = new ObjectHandler($this->getPropertyInfo());
-        $objectHandler->addHandleType(new HandleRecursiveType(
-            $objectHandler,
-            fn(HandleProperty $property) => null !== $property->getType()->getClassName()
-        ));
-        $objectHandler->addHandleType(new HandleIntType());
-        $objectHandler->addHandleType(new HandleArrayIterationType($objectHandler));
+        $objectHandler = ObjectHandler::createSimple([
+            function(ObjectHandlerInterface $objectHandler) {
+                return new HandleRecursiveType(
+                    $objectHandler,
+                    fn(HandleProperty $property) => null !== $property->getType()->getClassName()
+                );
+            },
+            new HandleIntType(),
+            function(ObjectHandlerInterface $objectHandler) {
+                return new HandleArrayIterationType($objectHandler);
+            },
+        ]);
 
         $object = $objectHandler->handle(TestA::class, [
             'testB' => [

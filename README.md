@@ -24,22 +24,12 @@ use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 
-$phpDocExtractor = new PhpDocExtractor();
-$reflectionExtractor = new ReflectionExtractor();
-
-$propertyInfoExtractor = new PropertyInfoExtractor(
-    [$reflectionExtractor],
-    [$phpDocExtractor, $reflectionExtractor],
-    [],
-    [$reflectionExtractor],
-    [$reflectionExtractor]
-);
-
 // create a object handler and configure project handle types
-$objectHandler = new ObjectHandler($propertyInfoExtractor);
-$objectHandler->addHandleType(new HandleStringType());
-$objectHandler->addHandleType(new HandleIntType());
-$objectHandler->addHandleType(new HandleBoolType());
+$objectHandler = ObjectHandler::createSimple([
+    new HandleStringType(),
+    new HandleIntType(),
+    new HandleBoolType(),
+]);
 
 $object = new class {
     public string $text;

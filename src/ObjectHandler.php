@@ -18,6 +18,9 @@ use ReflectionProperty;
 use RuntimeException;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
 use Symfony\Component\PropertyInfo\PropertyInfoExtractorInterface;
 use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -33,20 +36,51 @@ final class ObjectHandler extends AbstractHandler
     private PropertyAccessorInterface $propertyAccessor;
     private ViolationFactoryInterface $violationFactory;
 
+    /**
+     * @param HandleTypeInterface[]|callable[] $handleTypes
+     */
     public function __construct(
+        array $handleTypes,
         PropertyInfoExtractorInterface $propertyInfoExtractor,
         PropertyAccessorInterface $propertyAccessor = null,
         ViolationFactoryInterface $violationFactory = null
     ) {
+        foreach ($handleTypes as $handleType) {
+            if (!$handleType instanceof HandleTypeInterface && is_callable($handleType)) {
+                $this->handleTypes[] = $handleType($this);
+            } else {
+                $this->handleTypes[] = $handleType;
+            }
+        }
         $this->propertyInfoExtractor = $propertyInfoExtractor;
         $this->propertyAccessor = $propertyAccessor ?? new PropertyAccessor();
         $this->violationFactory = $violationFactory ?? new ViolationFactory();
         parent::__construct($violationFactory);
     }
 
-    public function addHandleType(HandleTypeInterface $handleType): void
+    /**
+     * @param HandleTypeInterface[]|callable[] $handleTypes
+     */
+    public static function createSimple(array $handleTypes): ObjectHandler
     {
-        $this->handleTypes[$handleType->getId()] = $handleType;
+        $phpDocExtractor = new PhpDocExtractor();
+        $reflectionExtractor = new ReflectionExtractor();
+
+        $listExtractors = [$reflectionExtractor];
+        $typeExtractors = [$phpDocExtractor, $reflectionExtractor];
+        $descriptionExtractors = [$phpDocExtractor];
+        $accessExtractors = [$reflectionExtractor];
+        $propertyInitializableExtractors = [$reflectionExtractor];
+
+        $propertyInfo = new PropertyInfoExtractor(
+            $listExtractors,
+            $typeExtractors,
+            $descriptionExtractors,
+            $accessExtractors,
+            $propertyInitializableExtractors
+        );
+
+        return new self($handleTypes, $propertyInfo);
     }
 
     /**
