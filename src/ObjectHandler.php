@@ -108,11 +108,10 @@ final class ObjectHandler extends AbstractHandler
         }
 
         if (!$constructor->isPublic()) {
+            if ($this->isReadonly($reflClass)) {
+                throw new RuntimeException('invalid class');
+            }
             return $reflClass->newInstanceWithoutConstructor();
-        }
-
-        if (0 === $constructor->getNumberOfRequiredParameters()) {
-            return new $class();
         }
 
         if ([] !== $data && !ArrayHelper::isAssoc($data)) {
@@ -260,8 +259,14 @@ final class ObjectHandler extends AbstractHandler
         HandleContextInterface $context = null,
         DefaultValueExtractorInterface $defaultValueExtractor = null
     ): object {
+        $reflClass = new ReflectionClass($class);
         $object = $this->instantiateObject($class, $data, $context, $defaultValueExtractor);
-        $this->handleObject($object, $data, $context, $defaultValueExtractor);
+        if ([] !== $data) {
+            if ($this->isReadonly($reflClass)) {
+                throw new RuntimeException('invalid class');
+            }
+            $this->handleObject($object, $data, $context, $defaultValueExtractor);
+        }
 
         return $object;
     }
@@ -326,5 +331,14 @@ final class ObjectHandler extends AbstractHandler
         }
 
         return $types[0];
+    }
+
+    private function isReadonly(\ReflectionClass $reflClass): bool
+    {
+        if (!method_exists($reflClass, 'isReadOnly')) {
+            return false;
+        }
+
+        return $reflClass->isReadOnly();
     }
 }
