@@ -11,6 +11,21 @@ Install the latest version with
 $ composer require omasn/object-handler
 ```
 
+### Symfony Configuring
+
+```
+services:
+    _instanceof:
+        Omasn\ObjectHandler\HandleTypeInterface:
+            tags: [ 'omasn.objectHandlerType' ]
+
+    Omasn\ObjectHandler\ObjectHandlerInterface:
+        class: Omasn\ObjectHandler\ObjectHandler
+        autowire: true
+        bind:
+            $handleTypes: !tagged_iterator omasn.objectHandlerType
+```
+
 ## Basic Usage
 
 ```php

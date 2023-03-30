@@ -30,7 +30,7 @@ final class ObjectHandler extends AbstractHandler
     /**
      * @var HandleTypeInterface[]
      */
-    protected array $handleTypes = [];
+    protected iterable $handleTypes = [];
 
     private PropertyInfoExtractorInterface $propertyInfoExtractor;
     private PropertyAccessorInterface $propertyAccessor;
@@ -40,7 +40,7 @@ final class ObjectHandler extends AbstractHandler
      * @param HandleTypeInterface[]|callable[] $handleTypes
      */
     public function __construct(
-        array $handleTypes,
+        iterable $handleTypes,
         PropertyInfoExtractorInterface $propertyInfoExtractor,
         PropertyAccessorInterface $propertyAccessor = null,
         ViolationFactoryInterface $violationFactory = null
